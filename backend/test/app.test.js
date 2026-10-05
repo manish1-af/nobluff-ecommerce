@@ -1,0 +1,46 @@
+import assert from "node:assert/strict"
+import { once } from "node:events"
+import test from "node:test"
+import app from "../src/app.js"
+
+test("API health, missing routes, and protected routes return consistent responses", async () => {
+  process.env.JWT_SECRET = "test-only-secret-with-more-than-32-characters"
+  const server = app.listen(0, "127.0.0.1")
+  await once(server, "listening")
+  const address = server.address()
+  const baseUrl = `http://127.0.0.1:${address.port}`
+
+  try {
+    const health = await fetch(`${baseUrl}/api/health`)
+    assert.equal(health.status, 200)
+    assert.deepEqual(await health.json(), { success: true, data: { status: "ok" } })
+
+    const missing = await fetch(`${baseUrl}/api/not-a-route`)
+    assert.equal(missing.status, 404)
+    assert.deepEqual(await missing.json(), { success: false, message: "Resource not found" })
+
+    for (const path of ["/api/cart", "/api/admin/orders"]) {
+      const response = await fetch(`${baseUrl}${path}`)
+      assert.equal(response.status, 401)
+      assert.deepEqual(await response.json(), { success: false, message: "Authentication required" })
+    }
+
+    const invalidSession = await fetch(`${baseUrl}/api/cart`, {
+      headers: { Authorization: "Bearer abc.def.ghi" },
+    })
+    assert.equal(invalidSession.status, 401)
+    assert.deepEqual(await invalidSession.json(), { success: false, message: "Invalid or expired session" })
+
+    const invalidRegistration = await fetch(`${baseUrl}/api/auth/register`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: "A User", email: "user@example.com", password: "short" }),
+    })
+    assert.equal(invalidRegistration.status, 400)
+    assert.equal((await invalidRegistration.json()).success, false)
+  } finally {
+    server.closeAllConnections()
+    server.close()
+    await once(server, "close")
+  }
+})
