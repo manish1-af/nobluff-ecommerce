@@ -1,4 +1,7 @@
+import dns from "node:dns"
 import mongoose from "mongoose"
+
+dns.setServers(["1.1.1.1", "8.8.8.8"])
 
 export async function connectDatabase() {
   if (!process.env.MONGODB_URI) {
@@ -6,5 +9,6 @@ export async function connectDatabase() {
   }
 
   await mongoose.connect(process.env.MONGODB_URI)
+
   console.info("Connected to MongoDB")
 }
