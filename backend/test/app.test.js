@@ -35,6 +35,12 @@ test("API health, missing routes, and protected routes return consistent respons
       assert.deepEqual(await response.json(), { success: false, message: "Authentication required" })
     }
 
+    for (const path of ["/auth/me", "/cart", "/admin/orders"]) {
+      const response = await fetch(`${baseUrl}${path}`)
+      assert.equal(response.status, 401)
+      assert.deepEqual(await response.json(), { success: false, message: "Authentication required" })
+    }
+
     const invalidSession = await fetch(`${baseUrl}/api/cart`, {
       headers: { Authorization: "Bearer abc.def.ghi" },
     })
