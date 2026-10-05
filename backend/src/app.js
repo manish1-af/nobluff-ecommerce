@@ -16,6 +16,7 @@ const defaultClientOrigins = [
   "http://localhost:5173",
   "http://127.0.0.1:8443",
   "http://127.0.0.1:5173",
+  "https://nobluff-ecommerce.vercel.app",
   "https://nobluff-ecommerce-h54dgwitb-manish1-afs-projects.vercel.app",
 ]
 
@@ -54,7 +55,9 @@ app.use(helmet())
 app.use(cors({
   origin(origin, callback) {
     if (isOriginAllowed(origin)) return callback(null, true)
-    callback(new Error("Origin is not allowed by CORS"))
+    const error = new Error("Origin is not allowed by CORS")
+    error.status = 403
+    callback(error)
   },
   credentials: true,
 }))

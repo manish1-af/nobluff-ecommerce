@@ -13,21 +13,24 @@ export function createToken(userId) {
 
 export const authCookieName = "nobluff_session"
 
+function getCookieOptions() {
+  const isProduction = process.env.NODE_ENV === "production"
+
+  return {
+    httpOnly: true,
+    secure: isProduction,
+    sameSite: isProduction ? "none" : "lax",
+    path: "/",
+  }
+}
+
 export function setAuthCookie(response, token) {
   response.cookie(authCookieName, token, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
-    path: "/api",
+    ...getCookieOptions(),
     maxAge: 7 * 24 * 60 * 60 * 1000,
   })
 }
 
 export function clearAuthCookie(response) {
-  response.clearCookie(authCookieName, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
-    path: "/api",
-  })
+  response.clearCookie(authCookieName, getCookieOptions())
 }

@@ -8,6 +8,7 @@ test("CORS allows configured frontend origins and No Bluff Vercel previews", () 
 
   assert.equal(isOriginAllowed("https://shop.nobluff.in"), true)
   assert.equal(isOriginAllowed("https://example.com"), true)
+  assert.equal(isOriginAllowed("https://nobluff-ecommerce.vercel.app"), true)
   assert.equal(isOriginAllowed("https://nobluff-ecommerce-h54dgwitb-manish1-afs-projects.vercel.app"), true)
   assert.equal(isOriginAllowed("https://nobluff-ecommerce-preview-team.vercel.app"), true)
   assert.equal(isOriginAllowed("https://unrelated.vercel.app"), false)
