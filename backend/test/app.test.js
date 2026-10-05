@@ -1,7 +1,17 @@
 import assert from "node:assert/strict"
 import { once } from "node:events"
 import test from "node:test"
-import app from "../src/app.js"
+import app, { isOriginAllowed } from "../src/app.js"
+
+test("CORS allows configured frontend origins and No Bluff Vercel previews", () => {
+  process.env.CLIENT_URL = "https://shop.nobluff.in, https://example.com/"
+
+  assert.equal(isOriginAllowed("https://shop.nobluff.in"), true)
+  assert.equal(isOriginAllowed("https://example.com"), true)
+  assert.equal(isOriginAllowed("https://nobluff-ecommerce-h54dgwitb-manish1-afs-projects.vercel.app"), true)
+  assert.equal(isOriginAllowed("https://nobluff-ecommerce-preview-team.vercel.app"), true)
+  assert.equal(isOriginAllowed("https://unrelated.vercel.app"), false)
+})
 
 test("API health, missing routes, and protected routes return consistent responses", async () => {
   process.env.JWT_SECRET = "test-only-secret-with-more-than-32-characters"
