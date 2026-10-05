@@ -1,4 +1,5 @@
 {
+  "title": "NoBluff",
   "description": "This web application enables clothing retailers to showcase products in a visually appealing claymorphism style, allowing customers to easily add items to their cart and request cash on delivery.",
   "robots": {
     "index": false
