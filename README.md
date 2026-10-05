@@ -24,6 +24,12 @@ Run the API from `backend` with `npm run dev` (port 5000 by default). Run the ex
 
 `MONGODB_URI`, `JWT_SECRET`, `JWT_EXPIRES_IN`, `CLIENT_URL`, `PORT`, and `SHIPPING_FEE` are backend settings. Cloudinary uses `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, and `CLOUDINARY_API_SECRET`. `SEED_ADMIN_EMAIL` and `SEED_ADMIN_PASSWORD` are only used by the development seed command. The frontend receives only `VITE_API_URL`; never add backend secrets to `VITE_*` variables.
 
+## Render Deployment
+
+Deploy the API as a Render web service with **Root Directory** set to `backend`, **Build Command** `npm install && npm run build`, and **Start Command** `npm start`. The backend build command checks the server entrypoint syntax; the API does not need a compilation step. Configure `MONGODB_URI`, `JWT_SECRET` (at least 32 characters), and `CLIENT_URL` with the deployed frontend's exact origin in the service environment. Set `NODE_ENV` to `production`. Render supplies `PORT` automatically.
+
+Deploy the frontend as a Render static site from the repository root with **Build Command** `npm install && npm run build` and **Publish Directory** `dist`. Set `VITE_API_URL` to the backend URL followed by `/api` (for example, `https://your-api.onrender.com/api`) before building the site. Redeploy the frontend whenever this build-time value changes.
+
 ## Order Lifecycle
 
 The customer submits a request from the server-validated cart. The API calculates item prices, subtotal, shipping fee, and total, snapshots product details, creates a `pending` COD order, and clears the cart in one MongoDB transaction. Stock is not reserved on submission. Admin acceptance atomically rechecks and decrements stock; rejection does not affect stock. Accepted orders move to `processing`, then `shipped`, then `delivered`. An accepted or processing order may be cancelled by an admin, restoring its stock atomically. MongoDB transactions require Atlas or another replica-set deployment.
