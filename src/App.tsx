@@ -1363,6 +1363,7 @@ export default function App() {
     } catch (error) {
       setToast(error instanceof Error ? error.message : "Unable to load account data")
     }
+    await new Promise((resolve) => window.setTimeout(resolve, 1000))
     setUser(nextUser)
     setView("shop")
   }
