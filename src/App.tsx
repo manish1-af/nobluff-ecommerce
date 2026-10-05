@@ -14,6 +14,7 @@ import {
   orderApi,
   productApi,
 } from "./services/api"
+import LoadingScreen from "./LoadingScreen"
 import logoSource from "./assets/no-bluff-logo-source.jpeg"
 import founderImage from "./assets/no-bluff-founder.png"
 import charlieLogo from "./assets/brands/charlie.jpeg"
@@ -447,10 +448,11 @@ function AuthPage({
   onAuthenticated,
 }: {
   onBack: () => void
-  onAuthenticated: (user: User) => void
+  onAuthenticated: (user: User) => Promise<void>
 }) {
   const [mode, setMode] = useState<"login" | "signup">("login")
   const [error, setError] = useState("")
+  const [isAuthenticating, setIsAuthenticating] = useState(false)
 
   async function handleAuth(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -460,6 +462,7 @@ function AuthPage({
     const name = String(data.get("name") || email.split("@")[0])
 
     setError("")
+    setIsAuthenticating(true)
     try {
       const result = mode === "login"
         ? await authApi.login(email, password)
@@ -467,7 +470,12 @@ function AuthPage({
       await onAuthenticated(result.user)
     } catch (authError) {
       setError(authError instanceof Error ? authError.message : "Unable to sign in")
+      setIsAuthenticating(false)
     }
+  }
+
+  if (isAuthenticating) {
+    return <LoadingScreen />
   }
 
   return (
@@ -1223,6 +1231,7 @@ function useBodyScrollLock(isLocked: boolean) {
 
 export default function App() {
   const [view, setView] = useState<"welcome" | "auth" | "shop">("welcome")
+  const [isInitialLoading, setIsInitialLoading] = useState(true)
   const [user, setUser] = useState<User | null>(null)
   const [products, setProducts] = useState<Product[]>([])
   const [categoryTiles, setCategoryTiles] = useState<CategoryTile[]>(() => {
@@ -1293,7 +1302,7 @@ export default function App() {
 
   useEffect(() => {
     let active = true
-    productApi.list()
+    const productsLoaded = productApi.list()
       .then(({ products: apiProducts }) => {
         if (active) setProducts(apiProducts.map(mapProduct))
       })
@@ -1301,7 +1310,7 @@ export default function App() {
         if (active) setToast(error instanceof Error ? error.message : "Unable to load products")
       })
 
-    authApi.me().then(async ({ user: apiUser }) => {
+    const sessionLoaded = authApi.me().then(async ({ user: apiUser }) => {
       if (!active) return
       const restoredUser: User = { ...apiUser }
       setUser(restoredUser)
@@ -1320,7 +1329,12 @@ export default function App() {
       } catch (error) {
         if (active) setToast(error instanceof Error ? error.message : "Unable to load account data")
       }
-    }).catch(() => undefined)
+    })
+      .catch(() => undefined)
+
+    void Promise.all([productsLoaded, sessionLoaded]).then(() => {
+      if (active) setIsInitialLoading(false)
+    })
 
     return () => {
       active = false
@@ -1337,8 +1351,6 @@ export default function App() {
 
   async function activateUser(apiUser: { id: string; name: string; email: string; phone: string; role: "customer" | "admin" }) {
     const nextUser: User = { ...apiUser }
-    setUser(nextUser)
-    setView("shop")
     try {
       if (nextUser.role === "admin") {
         const result = await orderApi.adminList()
@@ -1351,6 +1363,8 @@ export default function App() {
     } catch (error) {
       setToast(error instanceof Error ? error.message : "Unable to load account data")
     }
+    setUser(nextUser)
+    setView("shop")
   }
 
   async function addToCart(product: Product, size = "M") {
@@ -1499,6 +1513,10 @@ export default function App() {
       () => document.querySelector("#shop")?.scrollIntoView(),
       50,
     )
+  }
+
+  if (isInitialLoading) {
+    return <LoadingScreen />
   }
 
   if (view === "welcome") {
