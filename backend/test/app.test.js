@@ -22,9 +22,29 @@ test("API health, missing routes, and protected routes return consistent respons
   const baseUrl = `http://127.0.0.1:${address.port}`
 
   try {
-    const health = await fetch(`${baseUrl}/api/health`)
+    const health = await fetch(`${baseUrl}/health`)
     assert.equal(health.status, 200)
-    assert.deepEqual(await health.json(), { success: true, data: { status: "ok" } })
+    assert.deepEqual(await health.json(), { status: "ok" })
+
+    const headHealth = await fetch(`${baseUrl}/health`, { method: "HEAD" })
+    assert.equal(headHealth.status, 200)
+    assert.equal(await headHealth.text(), "")
+
+    const rootHealth = await fetch(`${baseUrl}/`)
+    assert.equal(rootHealth.status, 200)
+    assert.deepEqual(await rootHealth.json(), { status: "ok" })
+
+    const headRoot = await fetch(`${baseUrl}/`, { method: "HEAD" })
+    assert.equal(headRoot.status, 200)
+    assert.equal(await headRoot.text(), "")
+
+    const apiHealth = await fetch(`${baseUrl}/api/health`)
+    assert.equal(apiHealth.status, 200)
+    assert.deepEqual(await apiHealth.json(), { success: true, data: { status: "ok" } })
+
+    const headApiHealth = await fetch(`${baseUrl}/api/health`, { method: "HEAD" })
+    assert.equal(headApiHealth.status, 200)
+    assert.equal(await headApiHealth.text(), "")
 
     const missing = await fetch(`${baseUrl}/api/not-a-route`)
     assert.equal(missing.status, 404)
