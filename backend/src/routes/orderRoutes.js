@@ -1,12 +1,13 @@
 import { Router } from "express"
 import { z } from "zod"
-import { createOrder, listMyOrders } from "../controllers/orderController.js"
+import { cancelMyOrder, createOrder, listMyOrders } from "../controllers/orderController.js"
 import { requireAuth, requireCustomer } from "../middleware/authMiddleware.js"
 import { validate } from "../middleware/validate.js"
 
 const router = Router()
 router.use(requireAuth, requireCustomer)
 router.get("/", listMyOrders)
+router.patch("/:id/cancel", cancelMyOrder)
 router.post("/", validate(z.object({
   customerName: z.string().trim().min(2).max(100).optional(),
   phone: z.string().trim().min(7).max(30),

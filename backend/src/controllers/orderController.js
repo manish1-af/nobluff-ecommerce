@@ -168,3 +168,41 @@ export const updateOrderStatus = asyncHandler(async (request, response) => {
   }
   response.json({ success: true, data: { order: updatedOrder } })
 })
+
+export const cancelMyOrder = asyncHandler(async (request, response) => {
+  const session = await mongoose.startSession()
+  let updatedOrder
+  try {
+    await session.withTransaction(async () => {
+      const order = await Order.findOne({
+        _id: request.params.id,
+        userId: request.user._id,
+      }).session(session)
+
+      if (!order) {
+        const error = new Error("Order not found")
+        error.status = 404
+        throw error
+      }
+
+      if (order.status !== "pending" && order.status !== "accepted") {
+        const error = new Error(`Order cannot be cancelled in '${order.status}' status`)
+        error.status = 409
+        throw error
+      }
+
+      if (order.status === "accepted") {
+        for (const item of order.items) {
+          await Product.updateOne({ _id: item.productId }, { $inc: { stock: item.quantity } }, { session })
+        }
+      }
+
+      order.status = "cancelled"
+      await order.save({ session })
+      updatedOrder = order
+    })
+  } finally {
+    await session.endSession()
+  }
+  response.json({ success: true, data: { order: updatedOrder } })
+})

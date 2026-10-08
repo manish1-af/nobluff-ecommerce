@@ -323,14 +323,45 @@ const iconPaths: Record<string, ReactNode> = {
       <path d="M14 8l4 4-4 4M18 12H9" />
     </>
   ),
+  whatsapp: (
+    <>
+      <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
+    </>
+  ),
+  phone: (
+    <>
+      <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
+    </>
+  ),
+  mail: (
+    <>
+      <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+      <path d="m22 6-10 7L2 6" />
+    </>
+  ),
+  mapPin: (
+    <>
+      <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+      <circle cx="12" cy="10" r="3" />
+    </>
+  ),
+  alertTriangle: (
+    <>
+      <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" />
+      <line x1="12" y1="9" x2="12" y2="13" />
+      <line x1="12" y1="17" x2="12.01" y2="17" />
+    </>
+  ),
 }
 
 function Icon({
   name,
   size = 20,
+  style,
 }: {
   name: keyof typeof iconPaths
   size?: number
+  style?: CSSProperties
 }) {
   return (
     <svg
@@ -343,6 +374,7 @@ function Icon({
       strokeWidth="1.8"
       strokeLinecap="round"
       strokeLinejoin="round"
+      style={style}
     >
       {iconPaths[name]}
     </svg>
@@ -370,6 +402,332 @@ function Field({ label, children }: { label: string; children: ReactNode }) {
       <span>{label}</span>
       {children}
     </label>
+  )
+}
+
+const TRACKING_STEPS = [
+  { label: "Placed", subtitle: "COD requested" },
+  { label: "Approved", subtitle: "Stock reserved" },
+  { label: "Dispatched", subtitle: "On the way" },
+  { label: "Delivered", subtitle: "Completed" },
+]
+
+function getOrderTrackingState(status: OrderStatus) {
+  if (status === "Rejected") return { isRejected: true, isCancelled: false, activeIndex: -1 }
+  if (status === "Cancelled") return { isRejected: false, isCancelled: true, activeIndex: -1 }
+
+  let activeIndex = 0
+  if (status === "Pending") activeIndex = 0
+  else if (status === "Approved" || status === "Processing") activeIndex = 1
+  else if (status === "Shipped") activeIndex = 2
+  else if (status === "Delivered") activeIndex = 3
+
+  return { isRejected: false, isCancelled: false, activeIndex }
+}
+
+function OrderTrackingStepper({ status }: { status: OrderStatus }) {
+  const { isRejected, isCancelled, activeIndex } = getOrderTrackingState(status)
+
+  if (isRejected) {
+    return (
+      <div className="order-alert-box order-alert-rejected" role="alert">
+        <Icon name="alertTriangle" size={18} />
+        <div>
+          <strong>Order Declined by Store</strong>
+          <p style={{ margin: "2px 0 0", fontSize: "10px", opacity: 0.9 }}>
+            We could not verify the delivery address or stock for this request. Please reach out via WhatsApp for assistance.
+          </p>
+        </div>
+      </div>
+    )
+  }
+
+  if (isCancelled) {
+    return (
+      <div className="order-alert-box order-alert-cancelled" role="alert">
+        <Icon name="close" size={18} />
+        <div>
+          <strong>Order Cancelled</strong>
+          <p style={{ margin: "2px 0 0", fontSize: "10px", opacity: 0.9 }}>
+            This Cash on Delivery request was cancelled.
+          </p>
+        </div>
+      </div>
+    )
+  }
+
+  const fillPercent = (activeIndex / (TRACKING_STEPS.length - 1)) * 100
+
+  return (
+    <div className="order-tracking-box">
+      <div className="tracking-title">
+        <span>Order Progress</span>
+        <span>
+          Step {activeIndex + 1} of {TRACKING_STEPS.length}
+        </span>
+      </div>
+      <div className="stepper-track">
+        <div className="step-line">
+          <div className="step-line-fill" style={{ width: `${fillPercent}%` }} />
+        </div>
+        {TRACKING_STEPS.map((step, idx) => {
+          const isCompleted = idx < activeIndex || (activeIndex === 3 && idx === 3)
+          const isActive = idx === activeIndex && activeIndex !== 3
+          return (
+            <div
+              key={step.label}
+              className={`step-node ${isCompleted ? "completed" : ""} ${isActive ? "active" : ""}`}
+            >
+              <div className="step-icon-wrap">
+                {isCompleted ? <Icon name="check" size={14} /> : <span>{idx + 1}</span>}
+              </div>
+              <span className="step-label">{step.label}</span>
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+function ConfirmModal({
+  isOpen,
+  title,
+  subtitle,
+  children,
+  confirmLabel,
+  cancelLabel = "Cancel",
+  variant = "primary",
+  isLoading = false,
+  onConfirm,
+  onClose,
+}: {
+  isOpen: boolean
+  title: string
+  subtitle?: string
+  children?: ReactNode
+  confirmLabel: string
+  cancelLabel?: string
+  variant?: "primary" | "danger" | "soft"
+  isLoading?: boolean
+  onConfirm: () => void | Promise<void>
+  onClose: () => void
+}) {
+  if (!isOpen) return null
+  return (
+    <div className="overlay centered confirm-overlay" onMouseDown={() => !isLoading && onClose()}>
+      <section className="modal confirm-modal" onMouseDown={(e) => e.stopPropagation()}>
+        <div className="confirm-header">
+          <span className={`confirm-icon ${variant === "danger" ? "confirm-icon-danger" : ""}`}>
+            <Icon name={variant === "danger" ? "trash" : "shield"} size={22} />
+          </span>
+          <div>
+            <h3>{title}</h3>
+            {subtitle && <p className="confirm-subtitle">{subtitle}</p>}
+          </div>
+        </div>
+        {children && <div className="confirm-body">{children}</div>}
+        <div className="confirm-actions">
+          <Button variant="ghost" disabled={isLoading} onClick={onClose}>
+            {cancelLabel}
+          </Button>
+          <Button
+            className={variant === "danger" ? "btn-danger" : ""}
+            disabled={isLoading}
+            onClick={() => void onConfirm()}
+          >
+            {isLoading ? "Please wait..." : confirmLabel}
+          </Button>
+        </div>
+      </section>
+    </div>
+  )
+}
+
+function CustomerProfileDrawer({
+  isOpen,
+  user,
+  orders,
+  onClose,
+  onRequestCancelOrder,
+  onLogoutClick,
+}: {
+  isOpen: boolean
+  user: User
+  orders: Order[]
+  onClose: () => void
+  onRequestCancelOrder: (order: Order) => void
+  onLogoutClick: () => void
+}) {
+  const [profileTab, setProfileTab] = useState<"orders" | "account">("orders")
+  if (!isOpen) return null
+
+  const initials = user.name
+    .split(" ")
+    .map((n) => n[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase()
+
+  return (
+    <div className="overlay" onMouseDown={onClose}>
+      <aside className="drawer profile-drawer" onMouseDown={(e) => e.stopPropagation()}>
+        <div className="panel-header">
+          <div>
+            <p className="eyebrow">YOUR ACCOUNT</p>
+            <h2>
+              Customer Profile <span>({orders.length} orders)</span>
+            </h2>
+          </div>
+          <Button variant="icon" aria-label="Close profile" onClick={onClose}>
+            <Icon name="close" />
+          </Button>
+        </div>
+
+        <div className="profile-content">
+          <section className="profile-user-card">
+            <div className="profile-avatar">{initials || "NB"}</div>
+            <div className="profile-user-details">
+              <h3>{user.name}</h3>
+              <div className="profile-user-meta">
+                <span><Icon name="mail" size={13} /> {user.email}</span>
+                {user.phone && <span><Icon name="phone" size={13} /> {user.phone}</span>}
+              </div>
+              <span className="profile-member-badge">
+                <Icon name="shield" size={12} /> NO BLUFF Member
+              </span>
+            </div>
+          </section>
+
+          <div className="profile-tabs">
+            <Button
+              variant="ghost"
+              className={profileTab === "orders" ? "profile-tab-active" : ""}
+              onClick={() => setProfileTab("orders")}
+            >
+              My Orders & Tracking ({orders.length})
+            </Button>
+            <Button
+              variant="ghost"
+              className={profileTab === "account" ? "profile-tab-active" : ""}
+              onClick={() => setProfileTab("account")}
+            >
+              Account Info
+            </Button>
+          </div>
+
+          {profileTab === "orders" ? (
+            orders.length === 0 ? (
+              <div className="empty-state">
+                <span><Icon name="box" size={32} /></span>
+                <h3>No requests yet.</h3>
+                <p>Your Cash on Delivery orders and their live tracking status will appear here.</p>
+                <Button variant="primary" onClick={onClose}>
+                  Explore the Collection
+                </Button>
+              </div>
+            ) : (
+              <div className="customer-orders-list">
+                {orders.map((order) => {
+                  const canCancel = order.status === "Pending" || order.status === "Approved"
+                  const whatsappMessage = encodeURIComponent(
+                    `Hello NO BLUFF, I would like an update on my COD Order #${order.id} (${order.customer}, ₹${order.total}).`,
+                  )
+                  return (
+                    <article className="customer-order-card" key={order.apiId || order.id}>
+                      <div className="order-card-header">
+                        <div>
+                          <h4>Request #{order.id}</h4>
+                          <small>{order.createdAt}</small>
+                        </div>
+                        <span className={`status status-${order.status.toLowerCase().replace(/ /g, "-")}`}>
+                          {order.status}
+                        </span>
+                      </div>
+
+                      <OrderTrackingStepper status={order.status} />
+
+                      <div className="order-items-preview">
+                        {order.items.map((item) => (
+                          <div className="order-item-row" key={item.cartItemId}>
+                            <img src={item.image || "https://images.unsplash.com/photo-1598033129183-c4f50c736f10?auto=format&fit=crop&w=300&q=80"} alt={item.name} />
+                            <div className="order-item-meta">
+                              <strong>{item.name}</strong>
+                              <span>
+                                {item.color} · Size {item.size} · Qty {item.quantity}
+                              </span>
+                            </div>
+                            <span className="order-item-price">
+                              ₹{(item.price * item.quantity).toLocaleString("en-IN")}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+
+                      <div className="order-card-foot">
+                        <div className="order-total-row">
+                          <span>Payable on Delivery</span>
+                          <strong>₹{order.total.toLocaleString("en-IN")}</strong>
+                        </div>
+                        <div style={{ fontSize: "10px", color: "var(--muted)", lineHeight: 1.4 }}>
+                          <Icon name="mapPin" size={12} style={{ display: "inline", verticalAlign: "middle", marginRight: 4 }} />
+                          {order.address}, {order.city} · {order.pin}
+                        </div>
+                        <div className="order-actions-row">
+                          <a
+                            href={`https://wa.me/919596683583?text=${whatsappMessage}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="btn-whatsapp"
+                          >
+                            <Icon name="whatsapp" size={14} />
+                            WhatsApp Support
+                          </a>
+                          {canCancel && (
+                            <Button
+                              variant="ghost"
+                              className="btn-cancel-order"
+                              onClick={() => onRequestCancelOrder(order)}
+                            >
+                              <Icon name="close" size={13} /> Cancel request
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    </article>
+                  )
+                })}
+              </div>
+            )
+          ) : (
+            <div className="profile-account-section">
+              <div className="account-info-card">
+                <small>Full Name</small>
+                <strong>{user.name}</strong>
+              </div>
+              <div className="account-info-card">
+                <small>Registered Email</small>
+                <strong>{user.email}</strong>
+              </div>
+              <div className="account-info-card">
+                <small>Contact Phone</small>
+                <strong>{user.phone || "Not set"}</strong>
+              </div>
+              <div className="account-info-card">
+                <small>Preferred Payment</small>
+                <strong>Cash On Delivery (Verified)</strong>
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="profile-footer">
+          <Button variant="ghost" className="full-button" onClick={onLogoutClick}>
+            <Icon name="logout" size={17} /> Sign out of account
+          </Button>
+        </div>
+      </aside>
+    </div>
   )
 }
 
@@ -1408,7 +1766,29 @@ export default function App() {
   const [cartOpen, setCartOpen] = useState(false)
   const [checkoutOpen, setCheckoutOpen] = useState(false)
   const [successOpen, setSuccessOpen] = useState(false)
-  const [orderHistoryOpen, setOrderHistoryOpen] = useState(false)
+  const [profileOpen, setProfileOpen] = useState(false)
+  const [confirmModal, setConfirmModal] = useState<
+    | { type: "logout" }
+    | {
+        type: "checkout"
+        data: {
+          name: string
+          phone: string
+          address: string
+          city: string
+          pin: string
+          note: string
+        }
+      }
+    | {
+        type: "cancel_order"
+        orderApiId: string
+        orderNumber: string
+      }
+    | null
+  >(null)
+  const [isSubmittingOrder, setIsSubmittingOrder] = useState(false)
+  const [isCancellingOrder, setIsCancellingOrder] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
   const [toast, setToast] = useState("")
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
@@ -1417,6 +1797,16 @@ export default function App() {
   const [orders, setOrders] = useState<Order[]>([])
   const [customerOrders, setCustomerOrders] = useState<Order[]>([])
   const [createdOrderNumber, setCreatedOrderNumber] = useState("")
+
+  const savedAddress = useMemo(() => {
+    try {
+      const stored = localStorage.getItem("nobluff_saved_address")
+      if (stored) return JSON.parse(stored)
+    } catch {
+      // ignore
+    }
+    return null
+  }, [])
 
   const brandLogos = initialBrandLogos.map((brand) => ({
     ...brand,
@@ -1513,7 +1903,8 @@ export default function App() {
     cartOpen ||
       checkoutOpen ||
       successOpen ||
-      orderHistoryOpen ||
+      profileOpen ||
+      confirmModal !== null ||
       selectedProduct !== null,
   )
 
@@ -1568,30 +1959,81 @@ export default function App() {
     }
   }
 
-  async function submitOrder(event: FormEvent<HTMLFormElement>) {
+  function handleCheckoutFormSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     const data = new FormData(event.currentTarget)
+    const orderData = {
+      name: String(data.get("name")),
+      phone: String(data.get("phone")),
+      note: String(data.get("note") || ""),
+      address: String(data.get("address")),
+      city: String(data.get("city")),
+      pin: String(data.get("pin")),
+    }
+    try {
+      localStorage.setItem("nobluff_saved_address", JSON.stringify(orderData))
+    } catch {
+      // ignore
+    }
+    setConfirmModal({
+      type: "checkout",
+      data: orderData,
+    })
+  }
+
+  async function executeConfirmedCheckout(orderData: {
+    name: string
+    phone: string
+    note: string
+    address: string
+    city: string
+    pin: string
+  }) {
+    setIsSubmittingOrder(true)
     try {
       const result = await orderApi.submit({
-        customerName: String(data.get("name")),
-        phone: String(data.get("phone")),
-        note: String(data.get("note") || ""),
+        customerName: orderData.name,
+        phone: orderData.phone,
+        note: orderData.note,
         shippingAddress: {
-          line1: String(data.get("address")),
-          city: String(data.get("city")),
-          postalCode: String(data.get("pin")),
+          line1: orderData.address,
+          city: orderData.city,
+          postalCode: orderData.pin,
           country: "India",
         },
       })
       const createdOrder = mapOrder(result.order)
       setCreatedOrderNumber(createdOrder.id)
       setCustomerOrders((current) => [createdOrder, ...current])
+      setConfirmModal(null)
       setCheckoutOpen(false)
       setCartOpen(false)
       setSuccessOpen(true)
       setCart([])
+      setToast("Order request received successfully!")
     } catch (error) {
       setToast(error instanceof Error ? error.message : "Unable to submit your COD request")
+    } finally {
+      setIsSubmittingOrder(false)
+    }
+  }
+
+  async function cancelCustomerOrder(orderApiId: string) {
+    setIsCancellingOrder(true)
+    try {
+      const result = await orderApi.cancel(orderApiId)
+      const updated = mapOrder(result.order)
+      setCustomerOrders((current) =>
+        current.map((order) => (order.apiId === orderApiId ? updated : order)),
+      )
+      setToast(`Order #${updated.id} request cancelled.`)
+      setConfirmModal(null)
+      return true
+    } catch (error) {
+      setToast(error instanceof Error ? error.message : "Unable to cancel order")
+      return false
+    } finally {
+      setIsCancellingOrder(false)
     }
   }
 
@@ -1742,6 +2184,8 @@ export default function App() {
     setCart([])
     setOrders([])
     setCustomerOrders([])
+    setProfileOpen(false)
+    setConfirmModal(null)
     setView("auth")
   }
 
@@ -1863,11 +2307,11 @@ export default function App() {
             <Button
               variant="ghost"
               className="nav-tool"
-              onClick={() => setOrderHistoryOpen(true)}
+              onClick={() => setProfileOpen(true)}
               title="Customer profile"
             >
               <Icon name="user" size={21} />
-              <span>Profile</span>
+              <span>{user.name ? user.name.split(" ")[0] : "Profile"}</span>
             </Button>
             <Button
               variant="ghost"
@@ -1886,15 +2330,6 @@ export default function App() {
               <Icon name="bag" />
               <span>Bag</span>
               {itemCount > 0 && <span className="cart-count">{itemCount}</span>}
-            </Button>
-            <Button
-              variant="ghost"
-              className="nav-tool logout-tool"
-              onClick={logout}
-              title="Log out"
-            >
-              <Icon name="logout" size={21} />
-              <span>Log out</span>
             </Button>
           </div>
         </div>
@@ -2260,49 +2695,20 @@ export default function App() {
         </div>
       )}
 
-      {orderHistoryOpen && (
-        <div className="overlay" onMouseDown={() => setOrderHistoryOpen(false)}>
-          <aside className="drawer" onMouseDown={(event) => event.stopPropagation()}>
-            <div className="panel-header">
-              <div>
-                <p className="eyebrow">YOUR ACCOUNT</p>
-                <h2>Order requests <span>({customerOrders.length})</span></h2>
-              </div>
-              <Button variant="icon" aria-label="Close order history" onClick={() => setOrderHistoryOpen(false)}>
-                <Icon name="close" />
-              </Button>
-            </div>
-            <div className="cart-content">
-              {customerOrders.length === 0 ? (
-                <div className="empty-state">
-                  <span><Icon name="box" size={30} /></span>
-                  <h3>No requests yet.</h3>
-                  <p>Your COD requests and their latest status will appear here.</p>
-                </div>
-              ) : customerOrders.map((order) => (
-                <article className="cart-item" key={order.apiId}>
-                  <img src={order.items[0]?.image || ""} alt="" />
-                  <div>
-                    <div className="cart-item-head">
-                      <div>
-                        <h3>Request #{order.id}</h3>
-                        <p>{order.createdAt}</p>
-                      </div>
-                      <span className={`status status-${order.status.toLowerCase().replace(/ /g, "-")}`}>
-                        {order.status}
-                      </span>
-                    </div>
-                    <div className="cart-item-foot">
-                      <span>{order.items.reduce((count, item) => count + item.quantity, 0)} item(s)</span>
-                      <strong>₹{order.total.toLocaleString("en-IN")}</strong>
-                    </div>
-                  </div>
-                </article>
-              ))}
-            </div>
-          </aside>
-        </div>
-      )}
+      <CustomerProfileDrawer
+        isOpen={profileOpen}
+        user={user}
+        orders={customerOrders}
+        onClose={() => setProfileOpen(false)}
+        onRequestCancelOrder={(order) =>
+          setConfirmModal({
+            type: "cancel_order",
+            orderApiId: order.apiId,
+            orderNumber: order.id,
+          })
+        }
+        onLogoutClick={() => setConfirmModal({ type: "logout" })}
+      />
 
       {checkoutOpen && (
         <div
@@ -2326,17 +2732,22 @@ export default function App() {
                 <Icon name="close" />
               </Button>
             </div>
-            <form onSubmit={submitOrder}>
+            <form onSubmit={handleCheckoutFormSubmit}>
               <div className="form-grid">
                 <Field label="Full name">
-                  <input name="name" required defaultValue={user.name} placeholder="Your name" />
+                  <input
+                    name="name"
+                    required
+                    defaultValue={savedAddress?.name || user.name}
+                    placeholder="Your name"
+                  />
                 </Field>
                 <Field label="Phone number">
                   <input
                     name="phone"
                     required
                     type="tel"
-                    defaultValue={user.phone}
+                    defaultValue={savedAddress?.phone || user.phone}
                     placeholder="+91 98765 43210"
                     pattern="[+0-9 ()-]{10,}"
                   />
@@ -2347,12 +2758,18 @@ export default function App() {
                   name="address"
                   required
                   rows={3}
+                  defaultValue={savedAddress?.address || ""}
                   placeholder="House, street, area and landmark"
                 />
               </Field>
               <div className="form-grid">
                 <Field label="City">
-                  <input name="city" required placeholder="Your city" />
+                  <input
+                    name="city"
+                    required
+                    defaultValue={savedAddress?.city || ""}
+                    placeholder="Your city"
+                  />
                 </Field>
                 <Field label="PIN code">
                   <input
@@ -2360,6 +2777,7 @@ export default function App() {
                     required
                     inputMode="numeric"
                     pattern="[0-9]{6}"
+                    defaultValue={savedAddress?.pin || ""}
                     placeholder="180001"
                   />
                 </Field>
@@ -2367,6 +2785,7 @@ export default function App() {
               <Field label="Order note (optional)">
                 <input
                   name="note"
+                  defaultValue={savedAddress?.note || ""}
                   placeholder="Preferred delivery time, landmark..."
                 />
               </Field>
@@ -2375,7 +2794,7 @@ export default function App() {
                 <strong>₹{subtotal.toLocaleString("en-IN")}</strong>
               </div>
               <Button className="full-button" type="submit">
-                Submit COD request <Icon name="arrow" size={18} />
+                Review and confirm COD request <Icon name="arrow" size={18} />
               </Button>
               <p className="secure-note">
                 <Icon name="shield" size={16} /> No online payment needed. Our
@@ -2409,6 +2828,81 @@ export default function App() {
             </Button>
           </section>
         </div>
+      )}
+
+      {confirmModal && confirmModal.type === "logout" && (
+        <ConfirmModal
+          isOpen={true}
+          title="Sign out of NO BLUFF?"
+          subtitle="You will need to sign in again to view saved selections and track your orders."
+          confirmLabel="Sign out"
+          variant="danger"
+          onConfirm={logout}
+          onClose={() => setConfirmModal(null)}
+        />
+      )}
+
+      {confirmModal && confirmModal.type === "checkout" && (
+        <ConfirmModal
+          isOpen={true}
+          title="Confirm Cash on Delivery Request"
+          subtitle="Please double-check your delivery details and order total before dispatch."
+          confirmLabel="Confirm & Place COD Request"
+          cancelLabel="Edit details"
+          variant="primary"
+          isLoading={isSubmittingOrder}
+          onConfirm={() => executeConfirmedCheckout(confirmModal.data)}
+          onClose={() => setConfirmModal(null)}
+        >
+          <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+            <div style={{ display: "flex", justifyContent: "space-between" }}>
+              <span style={{ color: "var(--muted)" }}>Recipient:</span>
+              <strong>
+                {confirmModal.data.name} ({confirmModal.data.phone})
+              </strong>
+            </div>
+            <div style={{ display: "flex", justifyContent: "space-between" }}>
+              <span style={{ color: "var(--muted)" }}>Delivery Address:</span>
+              <span style={{ textAlign: "right", maxWidth: "60%" }}>
+                {confirmModal.data.address}, {confirmModal.data.city} ·{" "}
+                {confirmModal.data.pin}
+              </span>
+            </div>
+            {confirmModal.data.note && (
+              <div style={{ display: "flex", justifyContent: "space-between" }}>
+                <span style={{ color: "var(--muted)" }}>Note:</span>
+                <em>“{confirmModal.data.note}”</em>
+              </div>
+            )}
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                paddingTop: "8px",
+                borderTop: "1px solid var(--line)",
+              }}
+            >
+              <span>Total Payable on Delivery:</span>
+              <strong style={{ fontSize: "16px", color: "var(--ink)" }}>
+                ₹{subtotal.toLocaleString("en-IN")}
+              </strong>
+            </div>
+          </div>
+        </ConfirmModal>
+      )}
+
+      {confirmModal && confirmModal.type === "cancel_order" && (
+        <ConfirmModal
+          isOpen={true}
+          title={`Cancel Request #${confirmModal.orderNumber}?`}
+          subtitle="Are you sure you want to cancel this order request? Your reserved items will be released."
+          confirmLabel="Yes, Cancel Request"
+          cancelLabel="Keep Order"
+          variant="danger"
+          isLoading={isCancellingOrder}
+          onConfirm={() => cancelCustomerOrder(confirmModal.orderApiId)}
+          onClose={() => setConfirmModal(null)}
+        />
       )}
 
       {toast && (

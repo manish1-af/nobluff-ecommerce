@@ -158,6 +158,7 @@ export const orderApi = {
     shippingAddress: { line1: string; city: string; postalCode: string; country: string }
   }) => request<{ order: ApiOrder }>("/orders", { method: "POST", body: JSON.stringify(details) }),
   mine: () => request<{ orders: ApiOrder[] }>("/orders"),
+  cancel: (id: string) => request<{ order: ApiOrder }>(`/orders/${id}/cancel`, { method: "PATCH" }),
   adminList: () => request<{ orders: ApiOrder[] }>("/admin/orders"),
   adminUpdate: (id: string, status: ApiOrder["status"]) => {
     if (status === "accepted" || status === "rejected") {
