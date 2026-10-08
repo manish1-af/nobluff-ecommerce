@@ -2601,7 +2601,10 @@ export default function App() {
       <main>
         <section className="hero" id="new">
           <div className="hero-copy">
-            <p className="eyebrow">NEW SEASON · 2026</p>
+            <div className="hero-eyebrow-row">
+              <p className="eyebrow">NEW SEASON · 2026</p>
+              <span className="scribble-tag">Opening collection</span>
+            </div>
             <h1>
               New fit.
               <br />
@@ -2621,7 +2624,6 @@ export default function App() {
           <div className="hero-visual">
             <div className="sun-disc" />
             <img
-              className="!m-[5%] !h-[90%] !w-[90%] rounded-[18px] md:!m-[8%] md:!h-[84%] md:!w-[84%]"
               src={
                 homeHeroImage ||
                 "https://images.unsplash.com/photo-1619603364937-8d7af41ef206?auto=format&fit=crop&w=1200&q=90"
@@ -2645,7 +2647,6 @@ export default function App() {
               </p>
             </div>
           </div>
-          <div className="scribble">Opening collection</div>
         </section>
 
         <section className="category-showcase" id="categories">
