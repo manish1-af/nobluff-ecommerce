@@ -17,9 +17,12 @@ export function errorHandler(error, request, response, next) {
   } else if (error.name === "ValidationError") {
     status = 400
     message = Object.values(error.errors)[0]?.message || "Invalid data"
+  } else if (error.type === "entity.too.large" || error.status === 413) {
+    status = 413
+    message = "Uploaded image or request is too large (max 25 MB)"
   } else if (error.name === "MulterError") {
     status = 400
-    message = error.code === "LIMIT_FILE_SIZE" ? "Image must be 8 MB or smaller" : "Invalid image upload"
+    message = error.code === "LIMIT_FILE_SIZE" ? "Image must be 25 MB or smaller" : "Invalid image upload"
   } else if (error.name === "MongoServerError" || error.name === "MongoNetworkError") {
     status = 503
     message = "Database service is unavailable"
