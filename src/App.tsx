@@ -2820,48 +2820,143 @@ export default function App() {
         </section>
       </main>
 
-      <footer>
-        <div className="footer-brand">
-          <Logo />
-          <p>Premium brands. Better style. Same vibe.</p>
-        </div>
-        <div>
-          <strong>Shop</strong>
-          <a href="#new">New arrivals</a>
-          <a href="#shop">The collection</a>
-          <a href="#shop">Accessories</a>
-        </div>
-        <div>
-          <strong>Trust & Legal</strong>
+      <footer className="site-footer">
+        <div className="footer-top-strip">
+          <div className="footer-brand">
+            <div className="footer-brand-header">
+              <Logo />
+              <div className="footer-brand-title">
+                <strong>NO BLUFF</strong>
+                <span className="footer-badge">ORIGINAL FIT</span>
+              </div>
+            </div>
+            <p className="footer-tagline">
+              Premium clothing for easy, confident living. Quality without the noise.
+            </p>
+          </div>
           <button
             type="button"
-            className="footer-link-btn"
-            onClick={() => setPrivacyPolicyOpen(true)}
+            className="back-to-top-btn"
+            onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+            aria-label="Back to top"
           >
-            Privacy Policy
+            <span>Back to top</span>
+            <Icon name="arrow" size={14} style={{ transform: "rotate(-90deg)" }} />
           </button>
-          <a href="#story">Our Studio</a>
-          <a href="tel:9596683583">Direct Support</a>
         </div>
-        <div>
-          <strong>Visit us</strong>
-          <p>
-            Near Kameshwar Mandir,
-            <br />
-            Besides Petrol Pump, Akhnoor
-          </p>
-          <a href="tel:9596683583">+91 95966 83583</a>
+
+        <div className="footer-perks-strip">
+          <div className="footer-perk-item">
+            <div className="footer-perk-icon">
+              <Icon name="truck" size={17} />
+            </div>
+            <div>
+              <strong>Free Delivery</strong>
+              <small>On orders over ₹2,500</small>
+            </div>
+          </div>
+          <div className="footer-perk-item">
+            <div className="footer-perk-icon">
+              <Icon name="shield" size={17} />
+            </div>
+            <div>
+              <strong>COD Verified</strong>
+              <small>Pay at your doorstep</small>
+            </div>
+          </div>
+          <div className="footer-perk-item">
+            <div className="footer-perk-icon">
+              <Icon name="phone" size={17} />
+            </div>
+            <div>
+              <strong>Pre-Dispatch Call</strong>
+              <small>1-on-1 confirmation</small>
+            </div>
+          </div>
         </div>
-        <small>
-          © 2026 NO BLUFF. All style, no bluff. ·{" "}
-          <button
-            type="button"
-            className="footer-link-inline"
-            onClick={() => setPrivacyPolicyOpen(true)}
-          >
-            Privacy Policy
-          </button>
-        </small>
+
+        <div className="footer-columns-grid">
+          <div className="footer-col">
+            <span className="footer-col-title">Shop Edit</span>
+            <nav className="footer-nav" aria-label="Footer shop navigation">
+              <a href="#new">New Arrivals</a>
+              <a href="#shop">The Collection</a>
+              <a href="#categories">All Categories</a>
+              <a href="#story">Our Studio</a>
+            </nav>
+          </div>
+
+          <div className="footer-col">
+            <span className="footer-col-title">Trust & Help</span>
+            <nav className="footer-nav" aria-label="Footer trust navigation">
+              <button
+                type="button"
+                className="footer-link-btn"
+                onClick={() => setPrivacyPolicyOpen(true)}
+              >
+                Privacy Policy
+              </button>
+              <button
+                type="button"
+                className="footer-link-btn"
+                onClick={() => setProfileOpen(true)}
+              >
+                Order Tracking
+              </button>
+              <a href="tel:9596683583">Store Helpline</a>
+              <a
+                href="https://wa.me/919596683583?text=Hello%20NO%20BLUFF%2C%20I%20have%20a%20question%20about%20your%20collection."
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                WhatsApp Desk
+              </a>
+            </nav>
+          </div>
+
+          <div className="footer-col footer-col-visit">
+            <span className="footer-col-title">Flagship Outlet</span>
+            <div className="footer-location-card">
+              <div className="location-pin-wrap">
+                <Icon name="mapPin" size={18} />
+              </div>
+              <div>
+                <strong>Akhnoor Store</strong>
+                <p>Near Kameshwar Mandir, Besides Petrol Pump, Akhnoor, J&K</p>
+              </div>
+            </div>
+            <div className="footer-cta-group">
+              <a href="tel:9596683583" className="footer-cta-btn footer-cta-phone">
+                <Icon name="phone" size={15} />
+                <span>+91 95966 83583</span>
+              </a>
+              <a
+                href="https://wa.me/919596683583?text=Hello%20NO%20BLUFF%20team"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="footer-cta-btn footer-cta-whatsapp"
+              >
+                <Icon name="whatsapp" size={15} />
+                <span>WhatsApp Chat</span>
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <div className="footer-bottom-row">
+          <p>© 2026 NO BLUFF. All style, no bluff.</p>
+          <div className="footer-bottom-links">
+            <button
+              type="button"
+              className="footer-link-inline"
+              onClick={() => setPrivacyPolicyOpen(true)}
+            >
+              Privacy Policy
+            </button>
+            <span className="footer-dot">·</span>
+            <span>Akhnoor, Jammu & Kashmir</span>
+          </div>
+        </div>
       </footer>
 
       {privacyPolicyOpen && (
