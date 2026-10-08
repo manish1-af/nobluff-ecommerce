@@ -2,6 +2,8 @@
 
 React/Vite storefront with an Express and MongoDB API. Customer orders are COD requests: a request stays pending until an admin accepts or rejects it. There is no payment gateway.
 
+> 📖 **Comprehensive System Documentation**: For an in-depth breakdown of the entire architecture, complete API routes, database schemas, transaction mechanics, and frontend strategies, see [`CODEBASE_KNOWLEDGE_BASE.md`](file:///c:/Users/manis/pvt%20LTD/nobluff%20website/CODEBASE_KNOWLEDGE_BASE.md).
+
 ## Architecture
 
 - `src/App.tsx` retains the existing Figma storefront, auth, cart, checkout, and admin screens.

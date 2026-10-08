@@ -117,11 +117,20 @@ export const productApi = {
 }
 
 export const storefrontApi = {
-  get: () => request<{ categoryTiles: ApiCategoryTile[] | null; brandImages: ApiBrandImage[] | null }>("/storefront"),
+  get: () => request<{
+    categoryTiles: ApiCategoryTile[] | null
+    brandImages: ApiBrandImage[] | null
+    welcomeHeroImage?: string | null
+  }>("/storefront"),
   update: (settings: {
     categoryTiles?: ApiCategoryTile[]
     brandImages?: ApiBrandImage[]
-  }) => request<{ categoryTiles: ApiCategoryTile[] | null; brandImages: ApiBrandImage[] | null }>("/storefront", {
+    welcomeHeroImage?: string
+  }) => request<{
+    categoryTiles: ApiCategoryTile[] | null
+    brandImages: ApiBrandImage[] | null
+    welcomeHeroImage?: string | null
+  }>("/storefront", {
     method: "PUT",
     body: JSON.stringify(settings),
   }),

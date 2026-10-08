@@ -106,6 +106,7 @@ type ImageTarget =
   | { type: "product"; id: string; name: string }
   | { type: "category"; id: number; name: string }
   | { type: "brand"; id: string; name: string }
+  | { type: "welcomeHero"; id: string; name: string }
 
 function mapProduct(product: ApiProduct): Product {
   return {
@@ -385,18 +386,21 @@ function Logo() {
 function WelcomePage({
   onStart,
   brands = brandLogos,
+  heroImage,
 }: {
   onStart: () => void
   brands?: BrandLogo[]
+  heroImage?: string
 }) {
   const displayedBrands = Array.isArray(brands) ? brands : brandLogos
+  const displayedHero = heroImage || founderImage
 
   return (
     <main className="welcome-page founder-welcome-page">
       <section className="founder-bleed">
         <img
           className="founder-bleed-image"
-          src={founderImage}
+          src={displayedHero}
           alt="Rajat Gupta, founder of No Bluff"
         />
         <div className="founder-bleed-shade" />
@@ -579,6 +583,7 @@ function AdminPage({
   products,
   categoryTiles,
   brandLogos,
+  welcomeHeroImage,
   onUpdateOrder,
   onAddProduct,
   onAddCategory,
@@ -586,12 +591,14 @@ function AdminPage({
   onUpdateProductImage,
   onUpdateCategoryImage,
   onUpdateBrand,
+  onUpdateWelcomeHero,
   onLogout,
 }: {
   orders: Order[]
   products: Product[]
   categoryTiles: CategoryTile[]
   brandLogos: BrandLogo[]
+  welcomeHeroImage?: string
   onUpdateOrder: (id: string, status: OrderStatus) => Promise<void>
   onAddProduct: (product: Product, imageFile?: File) => Promise<void>
   onAddCategory: (category: CategoryTile) => Promise<boolean>
@@ -599,6 +606,7 @@ function AdminPage({
   onUpdateProductImage: (id: string, image: string, imageFile?: File) => Promise<boolean>
   onUpdateCategoryImage: (id: number, image: string, imageFile?: File) => Promise<boolean>
   onUpdateBrand: (id: string, image: string, imageFile?: File) => Promise<boolean>
+  onUpdateWelcomeHero: (image: string, imageFile?: File) => Promise<boolean>
   onLogout: () => void
 }) {
   const [activeSection, setActiveSection] = useState<
@@ -733,7 +741,7 @@ function AdminPage({
     if (!imageTarget) return
     const data = new FormData(event.currentTarget)
     const file = data.get("file")
-    const imageUrl = String(data.get("image") || "")
+    const imageUrl = String(data.get("image") || "").trim()
     const imageFile = file instanceof File && file.size > 0 ? file : undefined
     if (!imageFile && !imageUrl) {
       setImageError("Choose an image or enter an image URL.")
@@ -742,16 +750,27 @@ function AdminPage({
 
     setImageError("")
     setIsSavingImage(true)
-    let saved = false
-    if (imageTarget.type === "product") {
-      saved = await onUpdateProductImage(imageTarget.id, imageUrl, imageFile)
-    } else if (imageTarget.type === "category") {
-      saved = await onUpdateCategoryImage(imageTarget.id, imageUrl, imageFile)
-    } else {
-      saved = await onUpdateBrand(imageTarget.id, imageUrl, imageFile)
+    try {
+      let saved = false
+      if (imageTarget.type === "product") {
+        saved = await onUpdateProductImage(imageTarget.id, imageUrl, imageFile)
+      } else if (imageTarget.type === "category") {
+        saved = await onUpdateCategoryImage(imageTarget.id, imageUrl, imageFile)
+      } else if (imageTarget.type === "welcomeHero") {
+        saved = await onUpdateWelcomeHero(imageUrl, imageFile)
+      } else {
+        saved = await onUpdateBrand(imageTarget.id, imageUrl, imageFile)
+      }
+      if (saved) {
+        setImageTarget(null)
+      } else {
+        setImageError("Failed to save image. Please verify your connection or image format.")
+      }
+    } catch (err) {
+      setImageError(err instanceof Error ? err.message : "Failed to save image.")
+    } finally {
+      setIsSavingImage(false)
     }
-    setIsSavingImage(false)
-    if (saved) setImageTarget(null)
   }
 
   return (
@@ -909,12 +928,25 @@ function AdminPage({
         <section className="brand-manager">
           <div className="category-manager-heading">
             <div>
-              <p className="eyebrow">GET STARTED STRIP</p>
-              <h2>Brand images</h2>
+              <p className="eyebrow">GET STARTED PAGE & STRIP</p>
+              <h2>Get Started visuals</h2>
             </div>
-            <p>Replace the logos moving across the bottom of the Get Started page.</p>
+            <p>Customize the main Founder hero image and moving brand logos across the bottom of the Get Started page.</p>
           </div>
           <div className="admin-brand-grid">
+            <article className="admin-brand-card">
+              <div><img src={welcomeHeroImage || founderImage} alt="Welcome page hero" /></div>
+              <strong>Founder Hero</strong>
+              <Button
+                variant="soft"
+                onClick={() => {
+                  setImageError("")
+                  setImageTarget({ type: "welcomeHero", id: "welcomeHero", name: "Get Started Hero Image" })
+                }}
+              >
+                Replace image
+              </Button>
+            </article>
             {brandLogos.map((brand) => (
               <article className={`admin-brand-card ${brand.className}`} key={brand.id}>
                 <div><img src={brand.image} alt={brand.name} /></div>
@@ -1278,6 +1310,28 @@ function useBodyScrollLock(isLocked: boolean) {
   }, [isLocked])
 }
 
+function readFileAsDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => resolve(reader.result as string)
+    reader.onerror = reject
+    reader.readAsDataURL(file)
+  })
+}
+
+async function resolveImageSource(imageUrl: string, imageFile?: File): Promise<string> {
+  if (imageFile) {
+    try {
+      const uploaded = await productApi.uploadImage(imageFile)
+      if (uploaded?.image?.url) return uploaded.image.url
+    } catch (uploadError) {
+      console.warn("Cloudinary upload failed, falling back to embedded image:", uploadError)
+      return await readFileAsDataUrl(imageFile)
+    }
+  }
+  return imageUrl.trim()
+}
+
 export default function App() {
   const [view, setView] = useState<"welcome" | "auth" | "shop">("welcome")
   const [isInitialLoading, setIsInitialLoading] = useState(true)
@@ -1285,6 +1339,7 @@ export default function App() {
   const [products, setProducts] = useState<Product[]>([])
   const [categoryTiles, setCategoryTiles] = useState<CategoryTile[]>(visualCategories)
   const [brandImageOverrides, setBrandImageOverrides] = useState<Record<string, string>>({})
+  const [welcomeHeroImage, setWelcomeHeroImage] = useState<string>("")
   const [cart, setCart] = useState<CartItem[]>([])
   const [category, setCategory] = useState("All")
   const [search, setSearch] = useState("")
@@ -1352,6 +1407,9 @@ export default function App() {
           setBrandImageOverrides(Object.fromEntries(
             settings.brandImages.map(({ id, url }) => [id, url]),
           ))
+        }
+        if (settings.welcomeHeroImage) {
+          setWelcomeHeroImage(settings.welcomeHeroImage)
         }
       })
       .catch((error: unknown) => {
@@ -1498,8 +1556,7 @@ export default function App() {
 
   async function addAdminProduct(product: Product, imageFile?: File) {
     try {
-      const uploadedImage = imageFile ? await productApi.uploadImage(imageFile) : null
-      const imageUrl = uploadedImage?.image.url || product.image
+      const imageUrl = (await resolveImageSource(product.image, imageFile)) || product.image
       const compareAtPrice = product.discount
         ? Math.round(product.price / (1 - product.discount / 100))
         : null
@@ -1508,7 +1565,7 @@ export default function App() {
         category: product.category,
         price: product.price,
         compareAtPrice,
-        images: [{ url: imageUrl, ...(uploadedImage ? { publicId: uploadedImage.image.publicId } : {}) }],
+        images: [{ url: imageUrl }],
         sizes: product.category === "Accessories" ? ["One size"] : ["S", "M", "L", "XL"],
         colors: [product.color],
         stock: product.stock ?? 10,
@@ -1523,13 +1580,10 @@ export default function App() {
 
   async function updateProductImage(id: string, image: string, imageFile?: File): Promise<boolean> {
     try {
-      const uploadedImage = imageFile ? await productApi.uploadImage(imageFile) : null
-      const imageUrl = uploadedImage?.image.url || image
+      const imageUrl = await resolveImageSource(image, imageFile)
+      if (!imageUrl) return false
       const result = await productApi.update(id, {
-        images: [{
-          url: imageUrl,
-          ...(uploadedImage ? { publicId: uploadedImage.image.publicId } : {}),
-        }],
+        images: [{ url: imageUrl }],
       })
       setProducts((current) => current.map((product) =>
         product.id === id ? mapProduct(result.product) : product,
@@ -1570,8 +1624,8 @@ export default function App() {
 
   async function updateCategoryImage(id: number, image: string, imageFile?: File): Promise<boolean> {
     try {
-      const uploadedImage = imageFile ? await productApi.uploadImage(imageFile) : null
-      const imageUrl = uploadedImage?.image.url || image
+      const imageUrl = await resolveImageSource(image, imageFile)
+      if (!imageUrl) return false
       const nextTiles = categoryTiles.map((tile) =>
         tile.id === id ? { ...tile, image: imageUrl } : tile,
       )
@@ -1587,8 +1641,8 @@ export default function App() {
 
   async function updateBrandLogo(id: string, image: string, imageFile?: File): Promise<boolean> {
     try {
-      const uploadedImage = imageFile ? await productApi.uploadImage(imageFile) : null
-      const imageUrl = uploadedImage?.image.url || image
+      const imageUrl = await resolveImageSource(image, imageFile)
+      if (!imageUrl) return false
       const nextOverrides = { ...brandImageOverrides, [id]: imageUrl }
       const brandImages: ApiBrandImage[] = Object.entries(nextOverrides).map(([brandId, url]) => ({
         id: brandId,
@@ -1600,6 +1654,20 @@ export default function App() {
       return true
     } catch (error) {
       setToast(error instanceof Error ? error.message : "Unable to update brand image")
+      return false
+    }
+  }
+
+  async function updateWelcomeHero(image: string, imageFile?: File): Promise<boolean> {
+    try {
+      const imageUrl = await resolveImageSource(image, imageFile)
+      if (!imageUrl) return false
+      await storefrontApi.update({ welcomeHeroImage: imageUrl })
+      setWelcomeHeroImage(imageUrl)
+      setToast("Get Started hero image updated for all visitors")
+      return true
+    } catch (error) {
+      setToast(error instanceof Error ? error.message : "Unable to update welcome hero image")
       return false
     }
   }
@@ -1631,6 +1699,7 @@ export default function App() {
       <WelcomePage
         onStart={() => setView("auth")}
         brands={brandLogos}
+        heroImage={welcomeHeroImage}
       />
     )
   }
@@ -1653,6 +1722,7 @@ export default function App() {
         products={products}
         categoryTiles={categoryTiles}
         brandLogos={brandLogos}
+        welcomeHeroImage={welcomeHeroImage}
         onUpdateOrder={updateOrder}
         onAddProduct={addAdminProduct}
         onAddCategory={addCategoryTile}
@@ -1660,6 +1730,7 @@ export default function App() {
         onUpdateProductImage={updateProductImage}
         onUpdateCategoryImage={updateCategoryImage}
         onUpdateBrand={updateBrandLogo}
+        onUpdateWelcomeHero={updateWelcomeHero}
         onLogout={logout}
       />
     )

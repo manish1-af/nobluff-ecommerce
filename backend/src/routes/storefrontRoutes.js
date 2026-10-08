@@ -15,6 +15,17 @@ import { validate } from "../middleware/validate.js"
 
 const router = Router()
 
+const imageValidator = z
+  .string()
+  .trim()
+  .min(1)
+  .max(500000)
+  .transform((val) => {
+    if (val.startsWith("data:") || val.startsWith("/") || val.startsWith("blob:")) return val
+    if (!/^https?:\/\//i.test(val)) return `https://${val}`
+    return val
+  })
+
 const settingsSchema = z
   .object({
     categoryTiles: z
@@ -28,7 +39,7 @@ const settingsSchema = z
 
           filter: z.string().trim().min(1).max(80),
 
-          image: z.string().url().max(2048),
+          image: imageValidator,
         }),
       )
       .max(40)
@@ -39,11 +50,13 @@ const settingsSchema = z
         z.object({
           id: z.string().trim().min(1).max(80),
 
-          url: z.string().url().max(2048),
+          url: imageValidator,
         }),
       )
       .max(20)
       .optional(),
+
+    welcomeHeroImage: imageValidator.optional(),
   })
   .refine((settings) => Object.keys(settings).length > 0, {
     message: "Provide storefront settings to update",
