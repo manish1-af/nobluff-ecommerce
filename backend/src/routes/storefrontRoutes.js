@@ -57,6 +57,8 @@ const settingsSchema = z
       .optional(),
 
     welcomeHeroImage: imageValidator.optional(),
+
+    homeHeroImage: imageValidator.optional(),
   })
   .refine((settings) => Object.keys(settings).length > 0, {
     message: "Provide storefront settings to update",

@@ -108,6 +108,7 @@ type ImageTarget =
   | { type: "category"; id: number; name: string }
   | { type: "brand"; id: string; name: string }
   | { type: "welcomeHero"; id: string; name: string }
+  | { type: "homeHero"; id: string; name: string }
 
 function mapProduct(product: ApiProduct): Product {
   return {
@@ -949,6 +950,7 @@ function AdminPage({
   categoryTiles,
   brandLogos,
   welcomeHeroImage,
+  homeHeroImage,
   onUpdateOrder,
   onAddProduct,
   onAddCategory,
@@ -957,6 +959,7 @@ function AdminPage({
   onUpdateCategoryImage,
   onUpdateBrand,
   onUpdateWelcomeHero,
+  onUpdateHomeHero,
   onLogout,
 }: {
   orders: Order[]
@@ -964,6 +967,7 @@ function AdminPage({
   categoryTiles: CategoryTile[]
   brandLogos: BrandLogo[]
   welcomeHeroImage?: string
+  homeHeroImage?: string
   onUpdateOrder: (id: string, status: OrderStatus) => Promise<void>
   onAddProduct: (product: Product, imageFile?: File) => Promise<boolean>
   onAddCategory: (category: CategoryTile) => Promise<boolean>
@@ -972,6 +976,7 @@ function AdminPage({
   onUpdateCategoryImage: (id: number, image: string, imageFile?: File) => Promise<boolean>
   onUpdateBrand: (id: string, image: string, imageFile?: File) => Promise<boolean>
   onUpdateWelcomeHero: (image: string, imageFile?: File) => Promise<boolean>
+  onUpdateHomeHero: (image: string, imageFile?: File) => Promise<boolean>
   onLogout: () => void
 }) {
   const [activeSection, setActiveSection] = useState<
@@ -1163,6 +1168,8 @@ function AdminPage({
         saved = await onUpdateCategoryImage(imageTarget.id, imageUrl, imageFile)
       } else if (imageTarget.type === "welcomeHero") {
         saved = await onUpdateWelcomeHero(imageUrl, imageFile)
+      } else if (imageTarget.type === "homeHero") {
+        saved = await onUpdateHomeHero(imageUrl, imageFile)
       } else {
         saved = await onUpdateBrand(imageTarget.id, imageUrl, imageFile)
       }
@@ -1347,12 +1354,37 @@ function AdminPage({
         <section className="brand-manager">
           <div className="category-manager-heading">
             <div>
-              <p className="eyebrow">GET STARTED PAGE & STRIP</p>
-              <h2>Get Started visuals</h2>
+              <p className="eyebrow">STOREFRONT VISUALS & STRIP</p>
+              <h2>Hero visuals & brand strip</h2>
             </div>
-            <p>Customize the main Founder hero image and moving brand logos across the bottom of the Get Started page.</p>
+            <p>Customize the customer home hero image ("Quiet forms, confident fits"), the Founder hero image, and moving brand logos.</p>
           </div>
           <div className="admin-brand-grid">
+            <article className="admin-brand-card">
+              <div>
+                <img
+                  src={
+                    homeHeroImage ||
+                    "https://images.unsplash.com/photo-1619603364937-8d7af41ef206?auto=format&fit=crop&w=1200&q=90"
+                  }
+                  alt="Customer Home hero"
+                />
+              </div>
+              <strong>Home Hero (Quiet Forms)</strong>
+              <Button
+                variant="soft"
+                onClick={() => {
+                  setImageError("")
+                  setImageTarget({
+                    type: "homeHero",
+                    id: "homeHero",
+                    name: "Customer Home Hero Image (Quiet forms)",
+                  })
+                }}
+              >
+                Replace image
+              </Button>
+            </article>
             <article className="admin-brand-card">
               <div><img src={welcomeHeroImage || founderImage} alt="Welcome page hero" /></div>
               <strong>Founder Hero</strong>
@@ -1767,6 +1799,7 @@ export default function App() {
   const [categoryTiles, setCategoryTiles] = useState<CategoryTile[]>(visualCategories)
   const [brandImageOverrides, setBrandImageOverrides] = useState<Record<string, string>>({})
   const [welcomeHeroImage, setWelcomeHeroImage] = useState<string>("")
+  const [homeHeroImage, setHomeHeroImage] = useState<string>("")
   const [cart, setCart] = useState<CartItem[]>([])
   const [category, setCategory] = useState("All")
   const [search, setSearch] = useState("")
@@ -1869,6 +1902,9 @@ export default function App() {
         }
         if (settings.welcomeHeroImage) {
           setWelcomeHeroImage(settings.welcomeHeroImage)
+        }
+        if (settings.homeHeroImage) {
+          setHomeHeroImage(settings.homeHeroImage)
         }
       })
       .catch((error: unknown) => {
@@ -2185,6 +2221,20 @@ export default function App() {
     }
   }
 
+  async function updateHomeHero(image: string, imageFile?: File): Promise<boolean> {
+    try {
+      const imageUrl = await resolveImageSource(image, imageFile)
+      if (!imageUrl) return false
+      await storefrontApi.update({ homeHeroImage: imageUrl })
+      setHomeHeroImage(imageUrl)
+      setToast("Customer home hero image updated for all visitors")
+      return true
+    } catch (error) {
+      setToast(error instanceof Error ? error.message : "Unable to update customer home hero image")
+      return false
+    }
+  }
+
   async function logout() {
     await authApi.logout().catch(() => undefined)
     setUser(null)
@@ -2238,6 +2288,7 @@ export default function App() {
         categoryTiles={categoryTiles}
         brandLogos={brandLogos}
         welcomeHeroImage={welcomeHeroImage}
+        homeHeroImage={homeHeroImage}
         onUpdateOrder={updateOrder}
         onAddProduct={addAdminProduct}
         onAddCategory={addCategoryTile}
@@ -2246,6 +2297,7 @@ export default function App() {
         onUpdateCategoryImage={updateCategoryImage}
         onUpdateBrand={updateBrandLogo}
         onUpdateWelcomeHero={updateWelcomeHero}
+        onUpdateHomeHero={updateHomeHero}
         onLogout={logout}
       />
     )
@@ -2367,7 +2419,10 @@ export default function App() {
             <div className="sun-disc" />
             <img
               className="!m-[5%] !h-[90%] !w-[90%] rounded-[18px] md:!m-[8%] md:!h-[84%] md:!w-[84%]"
-              src="https://images.unsplash.com/photo-1619603364937-8d7af41ef206?auto=format&fit=crop&w=1200&q=90"
+              src={
+                homeHeroImage ||
+                "https://images.unsplash.com/photo-1619603364937-8d7af41ef206?auto=format&fit=crop&w=1200&q=90"
+              }
               alt="Model wearing the neutral Drift overshirt"
             />
             <div className="hero-note">

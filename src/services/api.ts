@@ -121,15 +121,18 @@ export const storefrontApi = {
     categoryTiles: ApiCategoryTile[] | null
     brandImages: ApiBrandImage[] | null
     welcomeHeroImage?: string | null
+    homeHeroImage?: string | null
   }>("/storefront"),
   update: (settings: {
     categoryTiles?: ApiCategoryTile[]
     brandImages?: ApiBrandImage[]
     welcomeHeroImage?: string
+    homeHeroImage?: string
   }) => request<{
     categoryTiles: ApiCategoryTile[] | null
     brandImages: ApiBrandImage[] | null
     welcomeHeroImage?: string | null
+    homeHeroImage?: string | null
   }>("/storefront", {
     method: "PUT",
     body: JSON.stringify(settings),

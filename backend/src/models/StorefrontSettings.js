@@ -35,6 +35,8 @@ const storefrontSettingsSchema = new mongoose.Schema(
     brandImages: { type: [brandImageSchema], default: undefined },
 
     welcomeHeroImage: { type: String, trim: true, maxlength: 500000, default: "" },
+
+    homeHeroImage: { type: String, trim: true, maxlength: 500000, default: "" },
   },
 
   { timestamps: true },

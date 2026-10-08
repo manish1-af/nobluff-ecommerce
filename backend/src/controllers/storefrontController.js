@@ -4,7 +4,7 @@ import { asyncHandler } from "../utils/asyncHandler.js"
 
 export const getStorefrontSettings = asyncHandler(async (request, response) => {
   const settings = await StorefrontSettings.findOne({ key: "default" })
-    .select("categoryTiles brandImages welcomeHeroImage")
+    .select("categoryTiles brandImages welcomeHeroImage homeHeroImage")
     .lean()
 
   response.json({
@@ -13,6 +13,7 @@ export const getStorefrontSettings = asyncHandler(async (request, response) => {
       categoryTiles: settings?.categoryTiles ?? null,
       brandImages: settings?.brandImages ?? null,
       welcomeHeroImage: settings?.welcomeHeroImage ?? null,
+      homeHeroImage: settings?.homeHeroImage ?? null,
     },
   })
 })
@@ -30,6 +31,9 @@ export const updateStorefrontSettings = asyncHandler(
     if (request.body.welcomeHeroImage !== undefined)
       changes.welcomeHeroImage = request.body.welcomeHeroImage
 
+    if (request.body.homeHeroImage !== undefined)
+      changes.homeHeroImage = request.body.homeHeroImage
+
     const settings = await StorefrontSettings.findOneAndUpdate(
       { key: "default" },
       { $set: changes },
@@ -40,7 +44,7 @@ export const updateStorefrontSettings = asyncHandler(
         setDefaultsOnInsert: true,
       },
     )
-      .select("categoryTiles brandImages welcomeHeroImage")
+      .select("categoryTiles brandImages welcomeHeroImage homeHeroImage")
       .lean()
 
     response.json({
@@ -49,6 +53,7 @@ export const updateStorefrontSettings = asyncHandler(
         categoryTiles: settings.categoryTiles ?? null,
         brandImages: settings.brandImages ?? null,
         welcomeHeroImage: settings.welcomeHeroImage ?? null,
+        homeHeroImage: settings.homeHeroImage ?? null,
       },
     })
   },
