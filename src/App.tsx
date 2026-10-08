@@ -2313,12 +2313,13 @@ export default function App() {
           <div className="header-actions">
             <Button
               variant="ghost"
-              className="nav-tool"
+              className="nav-tool profile-button"
               onClick={() => setProfileOpen(true)}
               title="Customer profile"
+              aria-label="Customer profile"
             >
               <Icon name="user" size={21} />
-              <span>{user.name ? user.name.split(" ")[0] : "Profile"}</span>
+              <span>{user?.name ? user.name.split(" ")[0] : "Profile"}</span>
             </Button>
             <Button
               variant="ghost"

@@ -574,9 +574,9 @@ footer.intro-footer p { margin: 0; color: var(--muted); font-size: 8px; line-hei
   .nav-search { grid-column: 1 / -1; grid-row: 2; width: 100%; height: 44px; }
   .header-actions { grid-column: 4; grid-row: 1; }
   .site-header .logo-mark { width: 60px; height: 60px; box-shadow: 4px 5px 12px rgba(71,52,36,.12); }
-  .header-actions .nav-tool:not(.cart-button):not(.logout-tool) { display: none; }
-  .header-actions .cart-button, .header-actions .logout-tool { display: inline-flex; width: 44px; min-width: 44px; padding: 0; }
-  .header-actions .cart-button > span:not(.cart-count), .header-actions .logout-tool > span { display: none; }
+  .header-actions .nav-tool:not(.cart-button):not(.profile-button) { display: none; }
+  .header-actions .cart-button, .header-actions .profile-button { display: inline-flex; width: 44px; min-width: 44px; padding: 0; align-items: center; justify-content: center; }
+  .header-actions .cart-button > span:not(.cart-count), .header-actions .profile-button > span { display: none; }
   .stock-button span { display: none; }
   .stock-button { width: 46px; min-width: 46px; padding: 0; }
   nav { display: none; position: absolute; z-index: 4; top: 78px; left: 16px; right: 16px; padding: 22px; flex-direction: column; border-radius: 20px; background: var(--cream); box-shadow: var(--shadow); }
