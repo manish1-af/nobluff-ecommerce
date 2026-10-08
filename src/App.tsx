@@ -558,6 +558,7 @@ function CustomerProfileDrawer({
   onClose,
   onRequestCancelOrder,
   onLogoutClick,
+  onOpenPrivacyPolicy,
 }: {
   isOpen: boolean
   user: User | null
@@ -565,6 +566,7 @@ function CustomerProfileDrawer({
   onClose: () => void
   onRequestCancelOrder: (order: Order) => void
   onLogoutClick: () => void
+  onOpenPrivacyPolicy?: () => void
 }) {
   const [profileTab, setProfileTab] = useState<"orders" | "account">("orders")
   if (!isOpen || !user) return null
@@ -725,6 +727,19 @@ function CustomerProfileDrawer({
                 <small>Preferred Payment</small>
                 <strong>Cash On Delivery (Verified)</strong>
               </div>
+              {onOpenPrivacyPolicy && (
+                <div
+                  className="account-info-card"
+                  style={{ cursor: "pointer", border: "1px solid rgba(169, 104, 70, 0.25)" }}
+                  onClick={onOpenPrivacyPolicy}
+                >
+                  <small>Legal & Transparency</small>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 2 }}>
+                    <strong>Privacy Policy & Data Security</strong>
+                    <span style={{ fontSize: "11px", color: "var(--clay)", fontWeight: 700 }}>Read →</span>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -1755,6 +1770,153 @@ function ProductDetail({
   )
 }
 
+function PrivacyPolicyPage({ onBack }: { onBack: () => void }) {
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "smooth" })
+  }, [])
+
+  return (
+    <div className="product-detail-page privacy-policy-page">
+      <header className="detail-header">
+        <Button variant="soft" onClick={onBack}>
+          ← Back to shop
+        </Button>
+        <Logo />
+        <div className="detail-header-spacer" />
+      </header>
+
+      <main className="privacy-shell">
+        <div className="privacy-header">
+          <p className="eyebrow">NO BLUFF · LEGAL & TRUST</p>
+          <h1>Privacy Policy</h1>
+          <p className="privacy-subtitle">
+            Last updated: October 2026. How we protect your data, handle Cash on Delivery (COD) orders, and honor your privacy.
+          </p>
+        </div>
+
+        <div className="privacy-content">
+          <section className="privacy-card">
+            <h2>1. Our Privacy Philosophy</h2>
+            <p>
+              At <strong>NO BLUFF</strong> ("we", "our", or "us"), our brand is built on honesty and clarity:
+              <em> All style, no bluff</em>. We believe that securing your personal information and being completely transparent
+              about how your data is used is fundamental to building lasting relationships with our customers.
+            </p>
+          </section>
+
+          <section className="privacy-card">
+            <h2>2. Information We Collect</h2>
+            <p>We only collect information necessary to fulfill your orders and give you a seamless shopping experience:</p>
+            <ul>
+              <li>
+                <strong>Customer Profile:</strong> Your name, email address, phone number, and securely encrypted password.
+              </li>
+              <li>
+                <strong>Shipping & Delivery Details:</strong> Full delivery address, city, state, postal PIN code, and optional delivery notes for our courier partners.
+              </li>
+              <li>
+                <strong>Shopping Activity:</strong> Bag selections, order history, tracking statuses, and product interactions.
+              </li>
+              <li>
+                <strong>Device & Session Data:</strong> Technical browser details and session tokens used solely to keep you signed in and preserve your cart.
+              </li>
+            </ul>
+          </section>
+
+          <section className="privacy-card">
+            <h2>3. How We Use Your Information</h2>
+            <p>Your details are used strictly to run our store and deliver your clothes safely:</p>
+            <ul>
+              <li>To confirm and dispatch Cash on Delivery (COD) orders to your doorstep.</li>
+              <li>To contact you via phone call or WhatsApp prior to dispatch for order verification.</li>
+              <li>To provide real-time order tracking from approval to delivery.</li>
+              <li>To securely save your delivery preferences so future checkouts are effortless.</li>
+              <li>To respond to your inquiries regarding sizing, styling, order adjustments, or cancellations.</li>
+            </ul>
+          </section>
+
+          <section className="privacy-card">
+            <h2>4. Cash on Delivery (COD) Orders & Verification</h2>
+            <p>
+              Because NO BLUFF offers payment on delivery, our dispatch desk may reach out to verify your phone number
+              and address before sending packages. We will <strong>never</strong> ask for bank passwords, UPI PINs, OTPs,
+              or payment credentials over the phone.
+            </p>
+          </section>
+
+          <section className="privacy-card">
+            <h2>5. Data Security & Storage Protocols</h2>
+            <p>We take active technical measures to safeguard your personal data:</p>
+            <ul>
+              <li>All user passwords are encrypted using bcrypt hashing before storage.</li>
+              <li>Website communications are encrypted end-to-end via secure HTTPS (SSL/TLS).</li>
+              <li>Storefront imagery and visual assets are securely hosted on Cloudinary's encrypted global CDN.</li>
+              <li>Customer and order data are stored in restricted-access MongoDB Atlas cloud clusters.</li>
+            </ul>
+          </section>
+
+          <section className="privacy-card">
+            <h2>6. Third-Party Sharing</h2>
+            <p>
+              We do <strong>not</strong> sell, rent, trade, or monetize your personal data to advertisers or third parties.
+              Information is shared only with logistics and courier services strictly required to transport your package
+              to your doorstep.
+            </p>
+          </section>
+
+          <section className="privacy-card">
+            <h2>7. Cookies & Local Storage</h2>
+            <p>
+              We use minimal cookies and browser local storage to save your checkout preferences
+              (such as saved delivery address) and maintain your login session. You can clear cookies in your
+              browser settings at any time without restricting your ability to explore the store.
+            </p>
+          </section>
+
+          <section className="privacy-card">
+            <h2>8. Your Rights & Data Choices</h2>
+            <p>You have full autonomy over your account and personal details:</p>
+            <ul>
+              <li>You can view and verify your account details inside your Customer Profile.</li>
+              <li>You can cancel pending COD requests directly through your order tracking dashboard before dispatch.</li>
+              <li>You can request permanent deletion of your account and order history by reaching out to our support team.</li>
+            </ul>
+          </section>
+
+          <section className="privacy-card">
+            <h2>9. Store Location & Contact Information</h2>
+            <p>If you have any questions or requests regarding your privacy, we are always here to help:</p>
+            <div className="privacy-contact-box">
+              <div>
+                <strong>Store Location:</strong>
+                <span>Near Kameshwar Mandir, Besides Petrol Pump, Akhnoor, Jammu & Kashmir</span>
+              </div>
+              <div>
+                <strong>Founder / Support:</strong>
+                <span>Rajat Gupta</span>
+              </div>
+              <div>
+                <strong>Phone / WhatsApp:</strong>
+                <a href="tel:9596683583">+91 95966 83583</a>
+              </div>
+              <div>
+                <strong>Email:</strong>
+                <a href="mailto:support@nobluff.in">support@nobluff.in</a>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <div className="privacy-footer-action">
+          <Button variant="primary" onClick={onBack}>
+            Return to shop <Icon name="arrow" size={18} />
+          </Button>
+        </div>
+      </main>
+    </div>
+  )
+}
+
 function useBodyScrollLock(isLocked: boolean) {
   useEffect(() => {
     document.body.style.overflow = isLocked ? "hidden" : ""
@@ -1839,6 +2001,7 @@ export default function App() {
   const [checkoutOpen, setCheckoutOpen] = useState(false)
   const [successOpen, setSuccessOpen] = useState(false)
   const [profileOpen, setProfileOpen] = useState(false)
+  const [privacyPolicyOpen, setPrivacyPolicyOpen] = useState(false)
   const [confirmModal, setConfirmModal] = useState<
     | { type: "logout" }
     | {
@@ -1979,6 +2142,7 @@ export default function App() {
       checkoutOpen ||
       successOpen ||
       profileOpen ||
+      privacyPolicyOpen ||
       confirmModal !== null ||
       selectedProduct !== null,
   )
@@ -2668,6 +2832,18 @@ export default function App() {
           <a href="#shop">Accessories</a>
         </div>
         <div>
+          <strong>Trust & Legal</strong>
+          <button
+            type="button"
+            className="footer-link-btn"
+            onClick={() => setPrivacyPolicyOpen(true)}
+          >
+            Privacy Policy
+          </button>
+          <a href="#story">Our Studio</a>
+          <a href="tel:9596683583">Direct Support</a>
+        </div>
+        <div>
           <strong>Visit us</strong>
           <p>
             Near Kameshwar Mandir,
@@ -2676,8 +2852,21 @@ export default function App() {
           </p>
           <a href="tel:9596683583">+91 95966 83583</a>
         </div>
-        <small>© 2026 NO BLUFF. All style, no bluff.</small>
+        <small>
+          © 2026 NO BLUFF. All style, no bluff. ·{" "}
+          <button
+            type="button"
+            className="footer-link-inline"
+            onClick={() => setPrivacyPolicyOpen(true)}
+          >
+            Privacy Policy
+          </button>
+        </small>
       </footer>
+
+      {privacyPolicyOpen && (
+        <PrivacyPolicyPage onBack={() => setPrivacyPolicyOpen(false)} />
+      )}
 
       {selectedProduct && (
         <ProductDetail
@@ -2810,6 +2999,10 @@ export default function App() {
           })
         }
         onLogoutClick={() => setConfirmModal({ type: "logout" })}
+        onOpenPrivacyPolicy={() => {
+          setProfileOpen(false)
+          setPrivacyPolicyOpen(true)
+        }}
       />
 
       {checkoutOpen && (
@@ -2900,7 +3093,18 @@ export default function App() {
               </Button>
               <p className="secure-note">
                 <Icon name="shield" size={16} /> No online payment needed. Our
-                team will call to confirm.
+                team will call to confirm. View{" "}
+                <button
+                  type="button"
+                  className="footer-link-inline"
+                  onClick={() => {
+                    setCheckoutOpen(false)
+                    setPrivacyPolicyOpen(true)
+                  }}
+                >
+                  Privacy Policy
+                </button>
+                .
               </p>
             </form>
           </section>
