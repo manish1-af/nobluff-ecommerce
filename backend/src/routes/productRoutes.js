@@ -17,16 +17,23 @@ import { validate } from "../middleware/validate.js"
 const router = Router()
 const imageUpload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 8 * 1024 * 1024 },
+  limits: { fileSize: 25 * 1024 * 1024 },
   fileFilter(request, file, callback) {
-    callback(null, ["image/jpeg", "image/png", "image/webp", "image/gif"].includes(file.mimetype))
+    if (
+      file.mimetype.startsWith("image/") ||
+      /\.(jpe?g|png|webp|gif|avif|svg|bmp|tiff|heic|heif|ico)$/i.test(file.originalname)
+    ) {
+      callback(null, true)
+    } else {
+      callback(new Error("Please upload a valid image file (JPEG, PNG, WebP, GIF, SVG, etc.)"))
+    }
   },
 })
 const imageValidator = z
   .string()
   .trim()
   .min(1)
-  .max(500000)
+  .max(10000000)
   .transform((val) => {
     if (val.startsWith("data:") || val.startsWith("/") || val.startsWith("blob:")) return val
     if (!/^https?:\/\//i.test(val)) return `https://${val}`

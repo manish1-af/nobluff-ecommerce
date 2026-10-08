@@ -19,7 +19,7 @@ const imageValidator = z
   .string()
   .trim()
   .min(1)
-  .max(500000)
+  .max(10000000)
   .transform((val) => {
     if (val.startsWith("data:") || val.startsWith("/") || val.startsWith("blob:")) return val
     if (!/^https?:\/\//i.test(val)) return `https://${val}`

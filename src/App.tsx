@@ -1161,26 +1161,21 @@ function AdminPage({
     setImageError("")
     setIsSavingImage(true)
     try {
-      let saved = false
       if (imageTarget.type === "product") {
-        saved = await onUpdateProductImage(imageTarget.id, imageUrl, imageFile)
+        await onUpdateProductImage(imageTarget.id, imageUrl, imageFile)
       } else if (imageTarget.type === "category") {
-        saved = await onUpdateCategoryImage(imageTarget.id, imageUrl, imageFile)
+        await onUpdateCategoryImage(imageTarget.id, imageUrl, imageFile)
       } else if (imageTarget.type === "welcomeHero") {
-        saved = await onUpdateWelcomeHero(imageUrl, imageFile)
+        await onUpdateWelcomeHero(imageUrl, imageFile)
       } else if (imageTarget.type === "homeHero") {
-        saved = await onUpdateHomeHero(imageUrl, imageFile)
+        await onUpdateHomeHero(imageUrl, imageFile)
       } else {
-        saved = await onUpdateBrand(imageTarget.id, imageUrl, imageFile)
+        await onUpdateBrand(imageTarget.id, imageUrl, imageFile)
       }
-      if (saved) {
-        setAdminConfirmation(`Image for ${imageTarget.name} updated successfully!`)
-        setImageTarget(null)
-      } else {
-        setImageError("Failed to save image. Please verify your connection or image format.")
-      }
+      setAdminConfirmation(`Image for ${imageTarget.name} updated successfully!`)
+      setImageTarget(null)
     } catch (err) {
-      setImageError(err instanceof Error ? err.message : "Failed to save image.")
+      setImageError(err instanceof Error ? err.message : "Failed to save image. Please verify your connection or image format.")
     } finally {
       setIsSavingImage(false)
     }
@@ -1565,7 +1560,7 @@ function AdminPage({
             <form onSubmit={replaceImage}>
               <Field label="Upload image"><input name="file" type="file" accept="image/*" /></Field>
               <div className="upload-divider"><span>OR</span></div>
-              <Field label="Image URL"><input name="image" type="url" placeholder="https://..." /></Field>
+              <Field label="Image URL"><input name="image" type="text" placeholder="https://... or paste any image link" /></Field>
               {imageError && <p className="form-error" role="alert">{imageError}</p>}
               <Button className="full-button" type="submit" disabled={isSavingImage}>
                 {isSavingImage ? "Saving image..." : "Save image"}
@@ -1778,17 +1773,54 @@ function readFileAsDataUrl(file: File): Promise<string> {
   })
 }
 
+async function compressImageFile(file: File, maxDimension = 1920, quality = 0.88): Promise<string> {
+  const dataUrl = await readFileAsDataUrl(file)
+  return new Promise((resolve) => {
+    const img = new Image()
+    img.onload = () => {
+      let { width, height } = img
+      if (width > maxDimension || height > maxDimension) {
+        if (width > height) {
+          height = Math.round((height * maxDimension) / width)
+          width = maxDimension
+        } else {
+          width = Math.round((width * maxDimension) / height)
+          height = maxDimension
+        }
+      }
+      const canvas = document.createElement("canvas")
+      canvas.width = width
+      canvas.height = height
+      const ctx = canvas.getContext("2d")
+      if (!ctx) return resolve(dataUrl)
+      ctx.drawImage(img, 0, 0, width, height)
+      try {
+        const mime = file.type === "image/png" ? "image/png" : "image/jpeg"
+        resolve(canvas.toDataURL(mime, quality))
+      } catch {
+        resolve(dataUrl)
+      }
+    }
+    img.onerror = () => resolve(dataUrl)
+    img.src = dataUrl
+  })
+}
+
 async function resolveImageSource(imageUrl: string, imageFile?: File): Promise<string> {
   if (imageFile) {
     try {
       const uploaded = await productApi.uploadImage(imageFile)
       if (uploaded?.image?.url) return uploaded.image.url
     } catch (uploadError) {
-      console.warn("Cloudinary upload failed, falling back to embedded image:", uploadError)
-      return await readFileAsDataUrl(imageFile)
+      console.warn("Cloudinary upload failed, compressing and saving image locally:", uploadError)
+      return await compressImageFile(imageFile)
     }
   }
-  return imageUrl.trim()
+  let url = imageUrl.trim()
+  if (url && !/^https?:\/\//i.test(url) && !url.startsWith("data:") && !url.startsWith("/")) {
+    url = `https://${url}`
+  }
+  return url
 }
 
 export default function App() {
@@ -2130,7 +2162,7 @@ export default function App() {
   async function updateProductImage(id: string, image: string, imageFile?: File): Promise<boolean> {
     try {
       const imageUrl = await resolveImageSource(image, imageFile)
-      if (!imageUrl) return false
+      if (!imageUrl) throw new Error("Please select an image file or enter an image URL.")
       const result = await productApi.update(id, {
         images: [{ url: imageUrl }],
       })
@@ -2140,8 +2172,9 @@ export default function App() {
       setToast("Product image updated for all visitors")
       return true
     } catch (error) {
-      setToast(error instanceof Error ? error.message : "Unable to update product image")
-      return false
+      const message = error instanceof Error ? error.message : "Unable to update product image"
+      setToast(message)
+      throw new Error(message)
     }
   }
 
@@ -2153,8 +2186,9 @@ export default function App() {
       setToast("Category tile published for all visitors")
       return true
     } catch (error) {
-      setToast(error instanceof Error ? error.message : "Unable to publish category tile")
-      return false
+      const message = error instanceof Error ? error.message : "Unable to publish category tile"
+      setToast(message)
+      throw new Error(message)
     }
   }
 
@@ -2166,15 +2200,16 @@ export default function App() {
       setToast("Category tile removed from the storefront")
       return true
     } catch (error) {
-      setToast(error instanceof Error ? error.message : "Unable to remove category tile")
-      return false
+      const message = error instanceof Error ? error.message : "Unable to remove category tile"
+      setToast(message)
+      throw new Error(message)
     }
   }
 
   async function updateCategoryImage(id: number, image: string, imageFile?: File): Promise<boolean> {
     try {
       const imageUrl = await resolveImageSource(image, imageFile)
-      if (!imageUrl) return false
+      if (!imageUrl) throw new Error("Please select an image file or enter an image URL.")
       const nextTiles = categoryTiles.map((tile) =>
         tile.id === id ? { ...tile, image: imageUrl } : tile,
       )
@@ -2183,15 +2218,16 @@ export default function App() {
       setToast("Category image updated for all visitors")
       return true
     } catch (error) {
-      setToast(error instanceof Error ? error.message : "Unable to update category image")
-      return false
+      const message = error instanceof Error ? error.message : "Unable to update category image"
+      setToast(message)
+      throw new Error(message)
     }
   }
 
   async function updateBrandLogo(id: string, image: string, imageFile?: File): Promise<boolean> {
     try {
       const imageUrl = await resolveImageSource(image, imageFile)
-      if (!imageUrl) return false
+      if (!imageUrl) throw new Error("Please select an image file or enter an image URL.")
       const nextOverrides = { ...brandImageOverrides, [id]: imageUrl }
       const brandImages: ApiBrandImage[] = Object.entries(nextOverrides).map(([brandId, url]) => ({
         id: brandId,
@@ -2202,36 +2238,39 @@ export default function App() {
       setToast("Brand image updated for all visitors")
       return true
     } catch (error) {
-      setToast(error instanceof Error ? error.message : "Unable to update brand image")
-      return false
+      const message = error instanceof Error ? error.message : "Unable to update brand image"
+      setToast(message)
+      throw new Error(message)
     }
   }
 
   async function updateWelcomeHero(image: string, imageFile?: File): Promise<boolean> {
     try {
       const imageUrl = await resolveImageSource(image, imageFile)
-      if (!imageUrl) return false
+      if (!imageUrl) throw new Error("Please select an image file or enter an image URL.")
       await storefrontApi.update({ welcomeHeroImage: imageUrl })
       setWelcomeHeroImage(imageUrl)
       setToast("Get Started hero image updated for all visitors")
       return true
     } catch (error) {
-      setToast(error instanceof Error ? error.message : "Unable to update welcome hero image")
-      return false
+      const message = error instanceof Error ? error.message : "Unable to update welcome hero image"
+      setToast(message)
+      throw new Error(message)
     }
   }
 
   async function updateHomeHero(image: string, imageFile?: File): Promise<boolean> {
     try {
       const imageUrl = await resolveImageSource(image, imageFile)
-      if (!imageUrl) return false
+      if (!imageUrl) throw new Error("Please select an image file or enter an image URL.")
       await storefrontApi.update({ homeHeroImage: imageUrl })
       setHomeHeroImage(imageUrl)
       setToast("Customer home hero image updated for all visitors")
       return true
     } catch (error) {
-      setToast(error instanceof Error ? error.message : "Unable to update customer home hero image")
-      return false
+      const message = error instanceof Error ? error.message : "Unable to update customer home hero image"
+      setToast(message)
+      throw new Error(message)
     }
   }
 
