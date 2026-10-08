@@ -2524,13 +2524,10 @@ export default function App() {
             aria-label="Main navigation"
           >
             <a href="#categories" onClick={() => setMenuOpen(false)}>
-              Men
+              Categories
             </a>
-            <a href="#categories" onClick={() => setMenuOpen(false)}>
-              Women
-            </a>
-            <a href="#categories" onClick={() => setMenuOpen(false)}>
-              Kids
+            <a href="#shop" onClick={() => setMenuOpen(false)}>
+              Men's Edit
             </a>
             <a href="#new" onClick={() => setMenuOpen(false)}>
               New
