@@ -8,6 +8,7 @@ import authRoutes from "./routes/authRoutes.js"
 import cartRoutes from "./routes/cartRoutes.js"
 import orderRoutes from "./routes/orderRoutes.js"
 import productRoutes from "./routes/productRoutes.js"
+import storefrontRoutes from "./routes/storefrontRoutes.js"
 import { errorHandler, notFound } from "./middleware/errorMiddleware.js"
 
 const app = express()
@@ -84,11 +85,13 @@ app.use("/api/products", productRoutes)
 app.use("/api/cart", cartRoutes)
 app.use("/api/orders", orderRoutes)
 app.use("/api/admin", adminRoutes)
+app.use("/api/storefront", storefrontRoutes)
 app.use("/auth", authRoutes)
 app.use("/products", productRoutes)
 app.use("/cart", cartRoutes)
 app.use("/orders", orderRoutes)
 app.use("/admin", adminRoutes)
+app.use("/storefront", storefrontRoutes)
 
 app.use(notFound)
 app.use(errorHandler)

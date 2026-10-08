@@ -387,7 +387,8 @@ footer > small { grid-column: 1 / -1; padding-top: 36px; border-top: 1px solid v
 .admin-category-card strong, .admin-category-card span { display: block; }
 .admin-category-card strong { font-family: "DM Serif Display", serif; font-size: 16px; font-weight: 400; }
 .admin-category-card span { margin-top: 3px; overflow: hidden; color: var(--muted); font-size: 8px; text-overflow: ellipsis; white-space: nowrap; }
-.admin-category-card > .btn { position: absolute; top: 14px; right: 14px; width: 30px; min-width: 30px; min-height: 30px; background: rgba(255,253,248,.9); color: #8b463c; box-shadow: 3px 4px 10px rgba(31,28,24,.12); }
+.admin-category-card > .category-remove { position: absolute; top: 14px; right: 14px; width: 30px; min-width: 30px; min-height: 30px; background: rgba(255,253,248,.9); color: #8b463c; box-shadow: 3px 4px 10px rgba(31,28,24,.12); }
+.admin-category-card > .category-image-edit { min-height: 30px; margin: 10px 4px 0; padding: 0 10px; box-shadow: none; font-size: 9px; }
 .new-category-tile { min-height: 180px; flex-direction: column; border: 1px dashed rgba(169,104,70,.5); border-radius: 19px; background: rgba(238,228,214,.4); color: var(--clay); }
 .new-category-tile span { font-size: 10px; }
 .brand-manager { margin-bottom: 55px; }
@@ -412,6 +413,7 @@ footer > small { grid-column: 1 / -1; padding-top: 36px; border-top: 1px solid v
 .admin-product-card small { margin-bottom: 5px; color: var(--clay); font-size: 7px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; }
 .admin-product-card strong { overflow: hidden; font-family: "DM Serif Display", serif; font-size: 17px; font-weight: 400; text-overflow: ellipsis; white-space: nowrap; }
 .admin-product-card p { margin: 5px 0 0; color: var(--muted); font-size: 9px; }
+.admin-product-details > .btn { min-height: 30px; margin-top: 11px; padding: 0 10px; box-shadow: none; font-size: 9px; }
 .new-product-card { min-height: 210px; flex-direction: column; border: 1px dashed rgba(169,104,70,.5); border-radius: 20px; background: rgba(238,228,214,.4); color: var(--clay); }
 .new-product-card span { font-size: 10px; }
 .customer-manager { min-width: 0; }

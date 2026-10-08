@@ -30,6 +30,19 @@ export type ApiProduct = {
   isActive: boolean
 }
 
+export type ApiCategoryTile = {
+  id: number
+  name: string
+  note: string
+  filter: string
+  image: string
+}
+
+export type ApiBrandImage = {
+  id: string
+  url: string
+}
+
 export type ApiCartItem = {
   _id: string
   productId: ApiProduct
@@ -94,11 +107,24 @@ export const productApi = {
   list: () => request<{ products: ApiProduct[]; pagination: { page: number; limit: number; total: number; pages: number } }>("/products?limit=60"),
   create: (product: Record<string, unknown>) =>
     request<{ product: ApiProduct }>("/products", { method: "POST", body: JSON.stringify(product) }),
+  update: (id: string, product: Record<string, unknown>) =>
+    request<{ product: ApiProduct }>(`/products/${id}`, { method: "PUT", body: JSON.stringify(product) }),
   uploadImage: async (file: File) => {
     const form = new FormData()
     form.append("image", file)
     return request<{ image: { url: string; publicId: string } }>("/products/image-upload", { method: "POST", body: form })
   },
+}
+
+export const storefrontApi = {
+  get: () => request<{ categoryTiles: ApiCategoryTile[] | null; brandImages: ApiBrandImage[] | null }>("/storefront"),
+  update: (settings: {
+    categoryTiles?: ApiCategoryTile[]
+    brandImages?: ApiBrandImage[]
+  }) => request<{ categoryTiles: ApiCategoryTile[] | null; brandImages: ApiBrandImage[] | null }>("/storefront", {
+    method: "PUT",
+    body: JSON.stringify(settings),
+  }),
 }
 
 export const cartApi = {

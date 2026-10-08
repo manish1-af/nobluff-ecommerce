@@ -8,6 +8,7 @@ React/Vite storefront with an Express and MongoDB API. Customer orders are COD r
 - `src/services/api.ts` is the frontend API adapter; `VITE_API_URL` points to the backend API root.
 - `backend/src` contains Express routes/controllers, Mongoose models, authentication, validation, and error handling.
 - MongoDB stores customer accounts, products, carts, and immutable order item snapshots.
+- MongoDB stores storefront category tiles and brand image overrides so admin changes appear for all visitors.
 - Product images are uploaded to Cloudinary by the authenticated admin API; MongoDB stores only image URLs and public IDs.
 
 ## Setup
@@ -49,6 +50,8 @@ All JSON responses use `{ success, data }` or `{ success: false, message }`. The
 | GET | `/api/products/slug/:slug` | Public | Active product by slug |
 | POST/PUT/DELETE | `/api/products` or `/api/products/:id` | Admin | Create, update, or deactivate product |
 | POST | `/api/products/image-upload` | Admin | Upload image to Cloudinary (8 MB maximum) |
+| GET | `/api/storefront` | Public | Read shared category tiles and brand image overrides |
+| PUT | `/api/storefront` | Admin | Save category tiles or brand image overrides for all visitors |
 | GET/POST/DELETE | `/api/cart` | Customer | Read, add to, or clear cart |
 | PUT/DELETE | `/api/cart/:itemId` | Customer | Change quantity or remove cart line |
 | POST | `/api/orders` | Customer | Submit COD request from server cart |

@@ -7,12 +7,14 @@ import {
 } from "react"
 import {
   ApiCartItem,
+  ApiBrandImage,
   ApiOrder,
   ApiProduct,
   authApi,
   cartApi,
   orderApi,
   productApi,
+  storefrontApi,
 } from "./services/api"
 import LoadingScreen from "./LoadingScreen"
 import logoSource from "./assets/no-bluff-logo-source.jpeg"
@@ -99,6 +101,11 @@ type BrandLogo = {
   image: string
   className: string
 }
+
+type ImageTarget =
+  | { type: "product"; id: string; name: string }
+  | { type: "category"; id: number; name: string }
+  | { type: "brand"; id: string; name: string }
 
 function mapProduct(product: ApiProduct): Product {
   return {
@@ -576,6 +583,8 @@ function AdminPage({
   onAddProduct,
   onAddCategory,
   onRemoveCategory,
+  onUpdateProductImage,
+  onUpdateCategoryImage,
   onUpdateBrand,
   onLogout,
 }: {
@@ -585,9 +594,11 @@ function AdminPage({
   brandLogos: BrandLogo[]
   onUpdateOrder: (id: string, status: OrderStatus) => Promise<void>
   onAddProduct: (product: Product, imageFile?: File) => Promise<void>
-  onAddCategory: (category: CategoryTile) => void
-  onRemoveCategory: (id: number) => void
-  onUpdateBrand: (id: string, image: string) => void
+  onAddCategory: (category: CategoryTile) => Promise<boolean>
+  onRemoveCategory: (id: number) => Promise<boolean>
+  onUpdateProductImage: (id: string, image: string, imageFile?: File) => Promise<boolean>
+  onUpdateCategoryImage: (id: number, image: string, imageFile?: File) => Promise<boolean>
+  onUpdateBrand: (id: string, image: string, imageFile?: File) => Promise<boolean>
   onLogout: () => void
 }) {
   const [activeSection, setActiveSection] = useState<
@@ -596,7 +607,9 @@ function AdminPage({
   const [filter, setFilter] = useState<"All" | OrderStatus>("All")
   const [productOpen, setProductOpen] = useState(false)
   const [categoryOpen, setCategoryOpen] = useState(false)
-  const [selectedBrand, setSelectedBrand] = useState<BrandLogo | null>(null)
+  const [imageTarget, setImageTarget] = useState<ImageTarget | null>(null)
+  const [imageError, setImageError] = useState("")
+  const [isSavingImage, setIsSavingImage] = useState(false)
   const visible =
     filter === "All" ? orders : orders.filter((order) => order.status === filter)
   const revenue = orders
@@ -700,10 +713,10 @@ function AdminPage({
     setProductOpen(false)
   }
 
-  function addCategory(event: FormEvent<HTMLFormElement>) {
+  async function addCategory(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     const data = new FormData(event.currentTarget)
-    onAddCategory({
+    const saved = await onAddCategory({
       id: Date.now(),
       name: String(data.get("name")),
       note: String(data.get("note")),
@@ -712,30 +725,33 @@ function AdminPage({
         String(data.get("image")) ||
         "https://images.unsplash.com/photo-1614028609503-590a6a47146a?auto=format&fit=crop&w=700&q=85",
     })
-    setCategoryOpen(false)
+    if (saved) setCategoryOpen(false)
   }
 
-  function replaceBrandImage(event: FormEvent<HTMLFormElement>) {
+  async function replaceImage(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    if (!selectedBrand) return
+    if (!imageTarget) return
     const data = new FormData(event.currentTarget)
     const file = data.get("file")
     const imageUrl = String(data.get("image") || "")
-
-    if (file instanceof File && file.size > 0) {
-      const reader = new FileReader()
-      reader.addEventListener("load", () => {
-        onUpdateBrand(selectedBrand.id, String(reader.result))
-        setSelectedBrand(null)
-      })
-      reader.readAsDataURL(file)
+    const imageFile = file instanceof File && file.size > 0 ? file : undefined
+    if (!imageFile && !imageUrl) {
+      setImageError("Choose an image or enter an image URL.")
       return
     }
 
-    if (imageUrl) {
-      onUpdateBrand(selectedBrand.id, imageUrl)
-      setSelectedBrand(null)
+    setImageError("")
+    setIsSavingImage(true)
+    let saved = false
+    if (imageTarget.type === "product") {
+      saved = await onUpdateProductImage(imageTarget.id, imageUrl, imageFile)
+    } else if (imageTarget.type === "category") {
+      saved = await onUpdateCategoryImage(imageTarget.id, imageUrl, imageFile)
+    } else {
+      saved = await onUpdateBrand(imageTarget.id, imageUrl, imageFile)
     }
+    setIsSavingImage(false)
+    if (saved) setImageTarget(null)
   }
 
   return (
@@ -815,13 +831,22 @@ function AdminPage({
                   <img src={product.image} alt={product.name} />
                   <span>Live</span>
                 </div>
-                <div>
+                <div className="admin-product-details">
                   <small>{product.category}</small>
                   <strong>{product.name}</strong>
                   <p>
                     {product.color} · ₹{product.price.toLocaleString("en-IN")} ·{" "}
                     {product.discount ?? 0}% off
                   </p>
+                  <Button
+                    variant="soft"
+                    onClick={() => {
+                      setImageError("")
+                      setImageTarget({ type: "product", id: product.id, name: product.name })
+                    }}
+                  >
+                    Change image
+                  </Button>
                 </div>
               </article>
             ))}
@@ -841,7 +866,7 @@ function AdminPage({
               <p className="eyebrow">STOREFRONT TILES</p>
               <h2>Shop categories</h2>
             </div>
-            <p>Create and remove the visual category tiles customers see in the shop.</p>
+            <p>Manage category tiles and images shown to customers in the shop.</p>
           </div>
           <div className="admin-category-grid">
             {categoryTiles.map((tile) => (
@@ -852,9 +877,20 @@ function AdminPage({
                   <span>{tile.note}</span>
                 </div>
                 <Button
+                  variant="soft"
+                  className="category-image-edit"
+                  onClick={() => {
+                    setImageError("")
+                    setImageTarget({ type: "category", id: tile.id, name: tile.name })
+                  }}
+                >
+                  Change image
+                </Button>
+                <Button
                   variant="icon"
+                  className="category-remove"
                   aria-label={`Remove ${tile.name}`}
-                  onClick={() => onRemoveCategory(tile.id)}
+                  onClick={() => void onRemoveCategory(tile.id)}
                 >
                   <Icon name="trash" size={16} />
                 </Button>
@@ -883,7 +919,13 @@ function AdminPage({
               <article className={`admin-brand-card ${brand.className}`} key={brand.id}>
                 <div><img src={brand.image} alt={brand.name} /></div>
                 <strong>{brand.name}</strong>
-                <Button variant="soft" onClick={() => setSelectedBrand(brand)}>
+                <Button
+                  variant="soft"
+                  onClick={() => {
+                    setImageError("")
+                    setImageTarget({ type: "brand", id: brand.id, name: brand.name })
+                  }}
+                >
                   Replace image
                 </Button>
               </article>
@@ -1018,19 +1060,26 @@ function AdminPage({
           </section>
         </div>
       )}
-      {selectedBrand && (
-        <div className="overlay centered" onMouseDown={() => setSelectedBrand(null)}>
+      {imageTarget && (
+        <div className="overlay centered" onMouseDown={() => setImageTarget(null)}>
           <section className="modal brand-modal" onMouseDown={(event) => event.stopPropagation()}>
             <div className="panel-header">
-              <div><p className="eyebrow">BRAND STRIP</p><h2>Replace {selectedBrand.name}</h2></div>
-              <Button variant="icon" aria-label="Close" onClick={() => setSelectedBrand(null)}><Icon name="close" /></Button>
+              <div>
+                <p className="eyebrow">STOREFRONT IMAGE</p>
+                <h2>Update {imageTarget.name}</h2>
+              </div>
+              <Button variant="icon" aria-label="Close" onClick={() => setImageTarget(null)}><Icon name="close" /></Button>
             </div>
-            <p className="modal-intro">Use a clear logo on a plain background. Uploaded files are saved on this device.</p>
-            <form onSubmit={replaceBrandImage}>
+            <p className="modal-intro">Changes are saved to the storefront and appear for all visitors.</p>
+            <form onSubmit={replaceImage}>
               <Field label="Upload image"><input name="file" type="file" accept="image/*" /></Field>
               <div className="upload-divider"><span>OR</span></div>
               <Field label="Image URL"><input name="image" type="url" placeholder="https://..." /></Field>
-              <Button className="full-button" type="submit">Update brand image <Icon name="arrow" size={18} /></Button>
+              {imageError && <p className="form-error" role="alert">{imageError}</p>}
+              <Button className="full-button" type="submit" disabled={isSavingImage}>
+                {isSavingImage ? "Saving image..." : "Save image"}
+                {!isSavingImage && <Icon name="arrow" size={18} />}
+              </Button>
             </form>
           </section>
         </div>
@@ -1234,27 +1283,8 @@ export default function App() {
   const [isInitialLoading, setIsInitialLoading] = useState(true)
   const [user, setUser] = useState<User | null>(null)
   const [products, setProducts] = useState<Product[]>([])
-  const [categoryTiles, setCategoryTiles] = useState<CategoryTile[]>(() => {
-    try {
-      const saved = localStorage.getItem("no-bluff-category-tiles")
-      return saved ? JSON.parse(saved) : visualCategories
-    } catch {
-      return visualCategories
-    }
-  })
-  const [brandLogos, setBrandLogos] = useState<BrandLogo[]>(() => {
-    try {
-      const overrides = JSON.parse(
-        localStorage.getItem("no-bluff-brand-overrides") || "{}",
-      ) as Record<string, string>
-      return initialBrandLogos.map((brand) => ({
-        ...brand,
-        image: overrides[brand.id] || brand.image,
-      }))
-    } catch {
-      return initialBrandLogos
-    }
-  })
+  const [categoryTiles, setCategoryTiles] = useState<CategoryTile[]>(visualCategories)
+  const [brandImageOverrides, setBrandImageOverrides] = useState<Record<string, string>>({})
   const [cart, setCart] = useState<CartItem[]>([])
   const [category, setCategory] = useState("All")
   const [search, setSearch] = useState("")
@@ -1271,6 +1301,10 @@ export default function App() {
   const [customerOrders, setCustomerOrders] = useState<Order[]>([])
   const [createdOrderNumber, setCreatedOrderNumber] = useState("")
 
+  const brandLogos = initialBrandLogos.map((brand) => ({
+    ...brand,
+    image: brandImageOverrides[brand.id] || brand.image,
+  }))
   const categories = [
     "All",
     ...Array.from(new Set(products.map((p) => p.category))),
@@ -1310,6 +1344,20 @@ export default function App() {
         if (active) setToast(error instanceof Error ? error.message : "Unable to load products")
       })
 
+    const storefrontLoaded = storefrontApi.get()
+      .then((settings) => {
+        if (!active) return
+        if (settings.categoryTiles) setCategoryTiles(settings.categoryTiles)
+        if (settings.brandImages) {
+          setBrandImageOverrides(Object.fromEntries(
+            settings.brandImages.map(({ id, url }) => [id, url]),
+          ))
+        }
+      })
+      .catch((error: unknown) => {
+        if (active) setToast(error instanceof Error ? error.message : "Unable to load storefront settings")
+      })
+
     const sessionLoaded = authApi.me().then(async ({ user: apiUser }) => {
       if (!active) return
       const restoredUser: User = { ...apiUser }
@@ -1332,7 +1380,7 @@ export default function App() {
     })
       .catch(() => undefined)
 
-    void Promise.all([productsLoaded, sessionLoaded]).then(() => {
+    void Promise.all([productsLoaded, storefrontLoaded, sessionLoaded]).then(() => {
       if (active) setIsInitialLoading(false)
     })
 
@@ -1473,29 +1521,87 @@ export default function App() {
     }
   }
 
-  function addCategoryTile(categoryTile: CategoryTile) {
+  async function updateProductImage(id: string, image: string, imageFile?: File): Promise<boolean> {
+    try {
+      const uploadedImage = imageFile ? await productApi.uploadImage(imageFile) : null
+      const imageUrl = uploadedImage?.image.url || image
+      const result = await productApi.update(id, {
+        images: [{
+          url: imageUrl,
+          ...(uploadedImage ? { publicId: uploadedImage.image.publicId } : {}),
+        }],
+      })
+      setProducts((current) => current.map((product) =>
+        product.id === id ? mapProduct(result.product) : product,
+      ))
+      setToast("Product image updated for all visitors")
+      return true
+    } catch (error) {
+      setToast(error instanceof Error ? error.message : "Unable to update product image")
+      return false
+    }
+  }
+
+  async function addCategoryTile(categoryTile: CategoryTile): Promise<boolean> {
     const nextTiles = [...categoryTiles, categoryTile]
-    setCategoryTiles(nextTiles)
-    localStorage.setItem("no-bluff-category-tiles", JSON.stringify(nextTiles))
+    try {
+      await storefrontApi.update({ categoryTiles: nextTiles })
+      setCategoryTiles(nextTiles)
+      setToast("Category tile published for all visitors")
+      return true
+    } catch (error) {
+      setToast(error instanceof Error ? error.message : "Unable to publish category tile")
+      return false
+    }
   }
 
-  function removeCategoryTile(id: number) {
+  async function removeCategoryTile(id: number): Promise<boolean> {
     const nextTiles = categoryTiles.filter((tile) => tile.id !== id)
-    setCategoryTiles(nextTiles)
-    localStorage.setItem("no-bluff-category-tiles", JSON.stringify(nextTiles))
+    try {
+      await storefrontApi.update({ categoryTiles: nextTiles })
+      setCategoryTiles(nextTiles)
+      setToast("Category tile removed from the storefront")
+      return true
+    } catch (error) {
+      setToast(error instanceof Error ? error.message : "Unable to remove category tile")
+      return false
+    }
   }
 
-  function updateBrandLogo(id: string, image: string) {
-    setBrandLogos((current) =>
-      current.map((brand) => (brand.id === id ? { ...brand, image } : brand)),
-    )
-    const overrides = JSON.parse(
-      localStorage.getItem("no-bluff-brand-overrides") || "{}",
-    ) as Record<string, string>
-    localStorage.setItem(
-      "no-bluff-brand-overrides",
-      JSON.stringify({ ...overrides, [id]: image }),
-    )
+  async function updateCategoryImage(id: number, image: string, imageFile?: File): Promise<boolean> {
+    try {
+      const uploadedImage = imageFile ? await productApi.uploadImage(imageFile) : null
+      const imageUrl = uploadedImage?.image.url || image
+      const nextTiles = categoryTiles.map((tile) =>
+        tile.id === id ? { ...tile, image: imageUrl } : tile,
+      )
+      await storefrontApi.update({ categoryTiles: nextTiles })
+      setCategoryTiles(nextTiles)
+      setToast("Category image updated for all visitors")
+      return true
+    } catch (error) {
+      setToast(error instanceof Error ? error.message : "Unable to update category image")
+      return false
+    }
+  }
+
+  async function updateBrandLogo(id: string, image: string, imageFile?: File): Promise<boolean> {
+    try {
+      const uploadedImage = imageFile ? await productApi.uploadImage(imageFile) : null
+      const imageUrl = uploadedImage?.image.url || image
+      const nextOverrides = { ...brandImageOverrides, [id]: imageUrl }
+      const brandImages: ApiBrandImage[] = Object.entries(nextOverrides).map(([brandId, url]) => ({
+        id: brandId,
+        url,
+      }))
+      await storefrontApi.update({ brandImages })
+      setBrandImageOverrides(nextOverrides)
+      setToast("Brand image updated for all visitors")
+      return true
+    } catch (error) {
+      setToast(error instanceof Error ? error.message : "Unable to update brand image")
+      return false
+    }
   }
 
   async function logout() {
@@ -1551,6 +1657,8 @@ export default function App() {
         onAddProduct={addAdminProduct}
         onAddCategory={addCategoryTile}
         onRemoveCategory={removeCategoryTile}
+        onUpdateProductImage={updateProductImage}
+        onUpdateCategoryImage={updateCategoryImage}
         onUpdateBrand={updateBrandLogo}
         onLogout={logout}
       />
