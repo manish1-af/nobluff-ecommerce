@@ -22,7 +22,18 @@ const imageUpload = multer({
     callback(null, ["image/jpeg", "image/png", "image/webp", "image/gif"].includes(file.mimetype))
   },
 })
-const imageSchema = z.array(z.object({ url: z.string().url(), publicId: z.string().max(300).optional() })).max(10).optional()
+const imageValidator = z
+  .string()
+  .trim()
+  .min(1)
+  .max(500000)
+  .transform((val) => {
+    if (val.startsWith("data:") || val.startsWith("/") || val.startsWith("blob:")) return val
+    if (!/^https?:\/\//i.test(val)) return `https://${val}`
+    return val
+  })
+
+const imageSchema = z.array(z.object({ url: imageValidator, publicId: z.string().max(300).optional() })).max(10).optional()
 const productSchema = z.object({
   name: z.string().trim().min(1).max(160),
   slug: z.string().trim().min(1).max(180).optional(),
@@ -30,7 +41,7 @@ const productSchema = z.object({
   price: z.coerce.number().min(0),
   compareAtPrice: z.coerce.number().min(0).nullable().optional(),
   images: imageSchema,
-  image: z.string().url().optional(),
+  image: imageValidator.optional(),
   category: z.string().trim().min(1).max(80),
   sizes: z.array(z.string().max(40)).max(30).optional(),
   colors: z.array(z.string().max(60)).max(30).optional(),

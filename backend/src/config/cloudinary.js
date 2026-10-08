@@ -1,5 +1,8 @@
+import dns from "node:dns"
 import { v2 as cloudinary } from "cloudinary"
 import { Readable } from "node:stream"
+
+dns.setServers(["1.1.1.1", "8.8.8.8"])
 
 const cloudName = process.env.CLOUDINARY_CLOUD_NAME?.trim()
 const apiKey = process.env.CLOUDINARY_API_KEY?.trim()

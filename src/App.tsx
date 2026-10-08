@@ -600,7 +600,7 @@ function AdminPage({
   brandLogos: BrandLogo[]
   welcomeHeroImage?: string
   onUpdateOrder: (id: string, status: OrderStatus) => Promise<void>
-  onAddProduct: (product: Product, imageFile?: File) => Promise<void>
+  onAddProduct: (product: Product, imageFile?: File) => Promise<boolean>
   onAddCategory: (category: CategoryTile) => Promise<boolean>
   onRemoveCategory: (id: number) => Promise<boolean>
   onUpdateProductImage: (id: string, image: string, imageFile?: File) => Promise<boolean>
@@ -618,6 +618,18 @@ function AdminPage({
   const [imageTarget, setImageTarget] = useState<ImageTarget | null>(null)
   const [imageError, setImageError] = useState("")
   const [isSavingImage, setIsSavingImage] = useState(false)
+  const [isSavingProduct, setIsSavingProduct] = useState(false)
+  const [productError, setProductError] = useState("")
+  const [isSavingCategory, setIsSavingCategory] = useState(false)
+  const [categoryError, setCategoryError] = useState("")
+  const [adminConfirmation, setAdminConfirmation] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!adminConfirmation) return
+    const timer = window.setTimeout(() => setAdminConfirmation(null), 4500)
+    return () => window.clearTimeout(timer)
+  }, [adminConfirmation])
+
   const visible =
     filter === "All" ? orders : orders.filter((order) => order.status === filter)
   const revenue = orders
@@ -703,37 +715,65 @@ function AdminPage({
 
   async function addProduct(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
+    setProductError("")
+    setIsSavingProduct(true)
     const data = new FormData(event.currentTarget)
     const file = data.get("file")
-    await onAddProduct({
-      id: "",
-      name: String(data.get("name")),
-      category: String(data.get("category")),
-      price: Number(data.get("price")),
-      discount: Number(data.get("discount")),
-      color: String(data.get("color")),
-      badge: "Just added",
-      image:
-        String(data.get("image")) ||
-        "https://images.unsplash.com/photo-1598033129183-c4f50c736f10?auto=format&fit=crop&w=900&q=85",
-      stock: Number(data.get("stock")),
+    try {
+      const name = String(data.get("name"))
+      const saved = await onAddProduct({
+        id: "",
+        name,
+        category: String(data.get("category")),
+        price: Number(data.get("price")),
+        discount: Number(data.get("discount")),
+        color: String(data.get("color")),
+        badge: "Just added",
+        image:
+          String(data.get("image")) ||
+          "https://images.unsplash.com/photo-1598033129183-c4f50c736f10?auto=format&fit=crop&w=900&q=85",
+        stock: Number(data.get("stock")),
       }, file instanceof File && file.size > 0 ? file : undefined)
-    setProductOpen(false)
+      if (saved) {
+        setProductOpen(false)
+        setAdminConfirmation(`Product "${name}" published successfully!`)
+      } else {
+        setProductError("Failed to publish product. Please check your image or network connection.")
+      }
+    } catch (err) {
+      setProductError(err instanceof Error ? err.message : "Failed to publish product.")
+    } finally {
+      setIsSavingProduct(false)
+    }
   }
 
   async function addCategory(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
+    setCategoryError("")
+    setIsSavingCategory(true)
     const data = new FormData(event.currentTarget)
-    const saved = await onAddCategory({
-      id: Date.now(),
-      name: String(data.get("name")),
-      note: String(data.get("note")),
-      filter: String(data.get("filter")),
-      image:
-        String(data.get("image")) ||
-        "https://images.unsplash.com/photo-1614028609503-590a6a47146a?auto=format&fit=crop&w=700&q=85",
-    })
-    if (saved) setCategoryOpen(false)
+    try {
+      const name = String(data.get("name"))
+      const saved = await onAddCategory({
+        id: Date.now(),
+        name,
+        note: String(data.get("note")),
+        filter: String(data.get("filter")),
+        image:
+          String(data.get("image")) ||
+          "https://images.unsplash.com/photo-1614028609503-590a6a47146a?auto=format&fit=crop&w=700&q=85",
+      })
+      if (saved) {
+        setCategoryOpen(false)
+        setAdminConfirmation(`Category tile "${name}" created successfully!`)
+      } else {
+        setCategoryError("Failed to create category tile. Please check connection.")
+      }
+    } catch (err) {
+      setCategoryError(err instanceof Error ? err.message : "Failed to create category tile.")
+    } finally {
+      setIsSavingCategory(false)
+    }
   }
 
   async function replaceImage(event: FormEvent<HTMLFormElement>) {
@@ -762,6 +802,7 @@ function AdminPage({
         saved = await onUpdateBrand(imageTarget.id, imageUrl, imageFile)
       }
       if (saved) {
+        setAdminConfirmation(`Image for ${imageTarget.name} updated successfully!`)
         setImageTarget(null)
       } else {
         setImageError("Failed to save image. Please verify your connection or image format.")
@@ -807,6 +848,19 @@ function AdminPage({
         <Button variant="ghost" onClick={onLogout}>Sign out</Button>
       </aside>
       <main className="admin-main">
+        {adminConfirmation && (
+          <div className="admin-success-banner" role="status">
+            <Icon name="check" size={18} />
+            <span>{adminConfirmation}</span>
+            <Button
+              variant="ghost"
+              aria-label="Dismiss banner"
+              onClick={() => setAdminConfirmation(null)}
+            >
+              <Icon name="close" size={14} />
+            </Button>
+          </div>
+        )}
         <header className="admin-header">
           <div>
             <p className="eyebrow">ADMIN ONLY</p>
@@ -1037,11 +1091,11 @@ function AdminPage({
         )}
       </main>
       {productOpen && (
-        <div className="overlay centered" onMouseDown={() => setProductOpen(false)}>
+        <div className="overlay centered" onMouseDown={() => !isSavingProduct && setProductOpen(false)}>
           <section className="modal product-modal" onMouseDown={(event) => event.stopPropagation()}>
             <div className="panel-header">
               <div><p className="eyebrow">ADMIN CATALOG</p><h2>Register a product</h2></div>
-              <Button variant="icon" aria-label="Close" onClick={() => setProductOpen(false)}><Icon name="close" /></Button>
+              <Button variant="icon" aria-label="Close" disabled={isSavingProduct} onClick={() => setProductOpen(false)}><Icon name="close" /></Button>
             </div>
             <form onSubmit={addProduct}>
               <Field label="Product name"><input name="name" required placeholder="e.g. Essential Linen Shirt" /></Field>
@@ -1062,17 +1116,21 @@ function AdminPage({
               <Field label="Available stock"><input name="stock" type="number" min="0" required defaultValue="10" /></Field>
               <Field label="Image URL"><input name="image" type="url" placeholder="https://... (optional)" /></Field>
               <Field label="Upload product image"><input name="file" type="file" accept="image/*" /></Field>
-              <Button className="full-button" type="submit">Publish product <Icon name="arrow" size={18} /></Button>
+              {productError && <p className="form-error" role="alert">{productError}</p>}
+              <Button className="full-button" type="submit" disabled={isSavingProduct}>
+                {isSavingProduct ? "Publishing product..." : "Publish product"}
+                {!isSavingProduct && <Icon name="arrow" size={18} />}
+              </Button>
             </form>
           </section>
         </div>
       )}
       {categoryOpen && (
-        <div className="overlay centered" onMouseDown={() => setCategoryOpen(false)}>
+        <div className="overlay centered" onMouseDown={() => !isSavingCategory && setCategoryOpen(false)}>
           <section className="modal category-modal" onMouseDown={(event) => event.stopPropagation()}>
             <div className="panel-header">
               <div><p className="eyebrow">STOREFRONT EDITOR</p><h2>Create a category tile</h2></div>
-              <Button variant="icon" aria-label="Close" onClick={() => setCategoryOpen(false)}><Icon name="close" /></Button>
+              <Button variant="icon" aria-label="Close" disabled={isSavingCategory} onClick={() => setCategoryOpen(false)}><Icon name="close" /></Button>
             </div>
             <p className="modal-intro">This tile will appear in the customer’s visual category collection.</p>
             <form onSubmit={addCategory}>
@@ -1087,7 +1145,11 @@ function AdminPage({
                 </select>
               </Field>
               <Field label="Tile image URL"><input name="image" type="url" placeholder="https://... (optional)" /></Field>
-              <Button className="full-button" type="submit">Publish category tile <Icon name="arrow" size={18} /></Button>
+              {categoryError && <p className="form-error" role="alert">{categoryError}</p>}
+              <Button className="full-button" type="submit" disabled={isSavingCategory}>
+                {isSavingCategory ? "Publishing category tile..." : "Publish category tile"}
+                {!isSavingCategory && <Icon name="arrow" size={18} />}
+              </Button>
             </form>
           </section>
         </div>
@@ -1554,7 +1616,7 @@ export default function App() {
     }
   }
 
-  async function addAdminProduct(product: Product, imageFile?: File) {
+  async function addAdminProduct(product: Product, imageFile?: File): Promise<boolean> {
     try {
       const imageUrl = (await resolveImageSource(product.image, imageFile)) || product.image
       const compareAtPrice = product.discount
@@ -1573,8 +1635,10 @@ export default function App() {
       })
       setProducts((current) => [...current, mapProduct(result.product)])
       setToast("Product published to the shop")
+      return true
     } catch (error) {
       setToast(error instanceof Error ? error.message : "Unable to publish product")
+      return false
     }
   }
 
