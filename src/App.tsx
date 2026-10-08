@@ -3,6 +3,7 @@ import {
   FormEvent,
   ReactNode,
   useEffect,
+  useMemo,
   useState,
 } from "react"
 import {
@@ -145,40 +146,45 @@ function mapOrderStatus(status: ApiOrder["status"]): OrderStatus {
     delivered: "Delivered",
     cancelled: "Cancelled",
   }
-  return labels[status]
+  return labels[status] || "Pending"
 }
 
 function mapOrder(order: ApiOrder): Order {
+  const address = order.shippingAddress || { line1: "", city: "", postalCode: "" }
   return {
-    id: order.orderNumber,
-    apiId: order._id,
-    customer: order.customerName,
-    email: order.customerEmail,
-    phone: order.phone,
-    address: order.shippingAddress.line1,
-    city: order.shippingAddress.city,
-    pin: order.shippingAddress.postalCode,
-    note: order.note,
-    items: order.items.map((item, index) => ({
-      id: item.productId,
-      cartItemId: `${order._id}-${index}`,
-      name: item.name,
-      category: "",
-      price: item.price,
-      image: item.image,
-      color: item.selectedColor,
-      quantity: item.quantity,
-      size: item.selectedSize,
-    })),
-    total: order.totalAmount,
+    id: order.orderNumber || "NB000000",
+    apiId: order._id || String(Date.now()),
+    customer: order.customerName || "Customer",
+    email: order.customerEmail || "",
+    phone: order.phone || "",
+    address: address.line1 || "",
+    city: address.city || "",
+    pin: address.postalCode || "",
+    note: order.note || "",
+    items: Array.isArray(order.items)
+      ? order.items.map((item, index) => ({
+          id: item.productId || `${order._id}-${index}`,
+          cartItemId: `${order._id}-${index}`,
+          name: item.name || "Product",
+          category: "",
+          price: Number(item.price) || 0,
+          image: item.image || "",
+          color: item.selectedColor || "",
+          quantity: Number(item.quantity) || 1,
+          size: item.selectedSize || "M",
+        }))
+      : [],
+    total: Number(order.totalAmount) || 0,
     status: mapOrderStatus(order.status),
-    createdAt: new Intl.DateTimeFormat("en-IN", {
-      day: "numeric",
-      month: "short",
-      year: "numeric",
-      hour: "numeric",
-      minute: "2-digit",
-    }).format(new Date(order.createdAt)),
+    createdAt: order.createdAt
+      ? new Intl.DateTimeFormat("en-IN", {
+          day: "numeric",
+          month: "short",
+          year: "numeric",
+          hour: "numeric",
+          minute: "2-digit",
+        }).format(new Date(order.createdAt))
+      : "Recently",
   }
 }
 
@@ -553,17 +559,18 @@ function CustomerProfileDrawer({
   onLogoutClick,
 }: {
   isOpen: boolean
-  user: User
+  user: User | null
   orders: Order[]
   onClose: () => void
   onRequestCancelOrder: (order: Order) => void
   onLogoutClick: () => void
 }) {
   const [profileTab, setProfileTab] = useState<"orders" | "account">("orders")
-  if (!isOpen) return null
+  if (!isOpen || !user) return null
 
-  const initials = user.name
+  const initials = (user.name || "NB")
     .split(" ")
+    .filter(Boolean)
     .map((n) => n[0])
     .join("")
     .slice(0, 2)
