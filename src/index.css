@@ -61,10 +61,10 @@ h1, h2, h3, p { margin-top: 0; }
 .logo { display: inline-flex; align-items: center; justify-self: start; border-radius: 50%; line-height: 1; }
 .logo-mark { position: relative; display: block; width: 80px; height: 80px; overflow: hidden; border: 1px solid rgba(31,28,24,.08); border-radius: 50%; background: #e9e0d4; box-shadow: 5px 6px 14px rgba(71,52,36,.14); }
 .logo-mark img { position: absolute; top: -113.1%; left: -25.16%; width: 150.31%; max-width: none; height: auto; }
-nav { display: flex; gap: 22px; font-size: 11px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
-nav a { position: relative; }
-nav a::after { content: ""; position: absolute; left: 0; right: 100%; bottom: -7px; height: 1px; background: var(--ink); transition: .25s; }
-nav a:hover::after { right: 0; }
+.site-header-nav { display: flex; gap: 22px; font-size: 11px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
+.site-header-nav a { position: relative; }
+.site-header-nav a::after { content: ""; position: absolute; left: 0; right: 100%; bottom: -7px; height: 1px; background: var(--ink); transition: .25s; }
+.site-header-nav a:hover::after { right: 0; }
 .nav-search { height: 50px; padding: 0 8px 0 17px; display: flex; align-items: center; gap: 11px; border: 1px solid rgba(31,28,24,.04); border-radius: 12px; background: #f0ebe3; box-shadow: inset 2px 2px 5px rgba(92,65,43,.05); color: var(--muted); }
 .nav-search input { min-width: 0; width: 100%; border: 0; outline: 0; background: transparent; color: var(--ink); font-size: 11px; }
 .nav-search input::placeholder { color: #938a7e; }
@@ -387,24 +387,34 @@ nav a:hover::after { right: 0; }
   margin-bottom: 4px;
 }
 
-.footer-nav {
+.footer-nav,
+.footer-links-list {
   display: flex;
   flex-direction: column;
   gap: 10px;
 }
 
 .footer-nav a,
-.footer-nav button {
+.footer-nav button,
+.footer-links-list a,
+.footer-links-list button {
   font-size: 12.5px;
   color: var(--muted);
   text-align: left;
   transition: color 0.2s, transform 0.2s;
   display: inline-block;
   line-height: 1.4;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  font-family: inherit;
 }
 
 .footer-nav a:hover,
-.footer-nav button:hover {
+.footer-nav button:hover,
+.footer-links-list a:hover,
+.footer-links-list button:hover {
   color: var(--ink);
   transform: translateX(3px);
 }
@@ -547,7 +557,9 @@ nav a:hover::after { right: 0; }
   }
 
   .footer-nav a,
-  .footer-nav button {
+  .footer-nav button,
+  .footer-links-list a,
+  .footer-links-list button {
     font-size: 12px;
     min-height: 32px;
     display: flex;
@@ -878,7 +890,7 @@ footer.intro-footer p { margin: 0; color: var(--muted); font-size: 8px; line-hei
 @media (max-width: 1180px) {
   .header-inner { padding-left: 20px; padding-right: 20px; gap: 14px; grid-template-columns: auto auto minmax(190px, 1fr) auto; }
   .site-header .logo-mark { width: 72px; height: 72px; }
-  nav { gap: 14px; font-size: 10px; }
+  .site-header-nav { gap: 14px; font-size: 10px; }
   .nav-tool { min-width: 46px; }
   .nav-tool > span:not(.cart-count) { display: none; }
   .hero { margin-left: 20px; margin-right: 20px; }
@@ -917,8 +929,8 @@ footer.intro-footer p { margin: 0; color: var(--muted); font-size: 8px; line-hei
   .header-actions .cart-button > span:not(.cart-count), .header-actions .profile-button > span { display: none; }
   .stock-button span { display: none; }
   .stock-button { width: 46px; min-width: 46px; padding: 0; }
-  nav { display: none; position: absolute; z-index: 4; top: 78px; left: 16px; right: 16px; padding: 22px; flex-direction: column; border-radius: 20px; background: var(--cream); box-shadow: var(--shadow); }
-  nav.nav-open { display: flex; }
+  .site-header-nav { display: none; position: absolute; z-index: 50; top: 78px; left: 16px; right: 16px; padding: 22px; flex-direction: column; border-radius: 20px; background: var(--cream); box-shadow: var(--shadow); }
+  .site-header-nav.nav-open { display: flex; }
   .hero { height: auto; margin: 18px; padding: 14px; grid-template-columns: 1fr; border-radius: 31px; gap: 16px; }
   .hero-copy { padding: 36px 24px 28px; }
   .hero-visual { height: 380px; min-height: 380px; margin: 0; border-radius: 28px; }
@@ -973,7 +985,7 @@ footer.intro-footer p { margin: 0; color: var(--muted); font-size: 8px; line-hei
   .account-button small { font-size: 0; }
   .account-button small::after { content: "OUT"; font-size: 8px; }
   .site-header .logo-mark { width: 52px; height: 52px; }
-  nav { top: 76px; }
+  .site-header-nav { top: 76px; }
   .hero { min-height: auto; margin: 12px; padding: 12px; border-radius: 25px; }
   .hero-copy { padding: 24px 14px 20px; }
   .hero h1 { max-width: 100%; font-size: clamp(38px, 10vw, 52px); }

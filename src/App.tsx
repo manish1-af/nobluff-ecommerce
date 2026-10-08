@@ -2520,7 +2520,7 @@ export default function App() {
           </Button>
           <Logo />
           <nav
-            className={menuOpen ? "nav-open" : ""}
+            className={`site-header-nav ${menuOpen ? "nav-open" : ""}`}
             aria-label="Main navigation"
           >
             <a href="#categories" onClick={() => setMenuOpen(false)}>
@@ -2879,17 +2879,17 @@ export default function App() {
         <div className="footer-columns-grid">
           <div className="footer-col">
             <span className="footer-col-title">Shop Edit</span>
-            <nav className="footer-nav" aria-label="Footer shop navigation">
+            <div className="footer-links-list">
               <a href="#new">New Arrivals</a>
               <a href="#shop">The Collection</a>
               <a href="#categories">All Categories</a>
               <a href="#story">Our Studio</a>
-            </nav>
+            </div>
           </div>
 
           <div className="footer-col">
             <span className="footer-col-title">Trust & Help</span>
-            <nav className="footer-nav" aria-label="Footer trust navigation">
+            <div className="footer-links-list">
               <button
                 type="button"
                 className="footer-link-btn"
@@ -2912,7 +2912,7 @@ export default function App() {
               >
                 WhatsApp Desk
               </a>
-            </nav>
+            </div>
           </div>
 
           <div className="footer-col footer-col-visit">
